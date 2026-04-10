@@ -25,8 +25,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark h-full antialiased scroll-smooth suppressHydrationWarning">
-      <body className={`${geistSans.variable} ${geistMono.variable} min-h-full flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500/30`}>
+    <html lang="en" className="dark h-full antialiased scroll-smooth ">
+      <body suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} min-h-full flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500/30`}>
         <InventoryProvider>
           {children}
         </InventoryProvider>

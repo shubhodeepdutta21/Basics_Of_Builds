@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import Spline from '@splinetool/react-spline/next';
 import { Cpu, Search, Blocks, Battery, Flame, ArrowRight } from 'lucide-react';
+
 
 export default function Home() {
   return (
@@ -81,11 +81,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-        {/* <div>
-          <Spline
-            scene="https://prod.spline.design/VmwNCEZ6PoNZ0xYW/scene.splinecode"
-          />
-        </div> */}
       </div>
     </main>
   );

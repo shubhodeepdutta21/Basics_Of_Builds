@@ -1,19 +1,39 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useInventory } from '@/lib/InventoryContext';
-import { MOCK_COMPONENTS } from '@/lib/mockData';
+
+import { supabase } from '@/lib/db'; // ✅ IMPORT your Supabase client instead!
 import { Cpu, Plus, Minus, ArrowRight, Trash2 } from 'lucide-react';
 
 export default function InventoryPage() {
   const { addToInventory, removeFromInventory, getQuantity, clearInventory } = useInventory();
 
-  // Group components by category
-  const groupedComponents = MOCK_COMPONENTS.reduce((acc, current) => {
+  // Create a state to hold our real database components!
+  const [components, setComponents] = useState<any[]>([]);
+
+  // Fetch the data as soon as the page loads ⏳
+  useEffect(() => {
+    const fetchComponents = async () => {
+      const { data, error } = await supabase.from('components').select('*');
+      if (error) {
+        console.error("Error fetching components:", error);
+      } else if (data) {
+        setComponents(data);
+      }
+    };
+
+    fetchComponents();
+  }, []);
+
+  // Group components by category (using our new 'components' state instead of MOCK!)
+  const groupedComponents = components.reduce((acc, current) => {
     (acc[current.category] = acc[current.category] || []).push(current);
     return acc;
-  }, {} as Record<string, typeof MOCK_COMPONENTS>);
+  }, {} as Record<string, any[]>);
+
+
 
   return (
     <main className="min-h-screen flex flex-col pt-6 px-4 md:px-8 max-w-6xl mx-auto w-full">
