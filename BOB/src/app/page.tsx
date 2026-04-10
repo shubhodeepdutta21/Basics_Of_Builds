@@ -1,21 +1,21 @@
 import React from 'react';
 import Link from 'next/link';
+import Spline from '@splinetool/react-spline/next';
 import { Cpu, Search, Blocks, Battery, Flame, ArrowRight } from 'lucide-react';
-
 
 export default function Home() {
   return (
-    <main className="flex-grow flex flex-col relative overflow-hidden">
+    <main className="flex-grow flex flex-col relative overflow-hidden bg-[#0A0012]">
       {/* Background decorations */}
       <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-indigo-500/20 to-transparent -z-10 pointer-events-none" />
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-fuchsia-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
       <div className="absolute top-40 -left-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
 
       {/* Navigation */}
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-white/5 backdrop-blur-md">
+      <nav className="flex items-center justify-between px-6 py-4 border-b border-white/5 backdrop-blur-md z-30">
         <div className="flex items-center gap-2">
           <Cpu className="w-8 h-8 text-indigo-400" />
-          <span className="text-xxl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-fuchsia-400 bg-clip-text text-transparent">
+          <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-fuchsia-400 bg-clip-text text-transparent">
             BOB
           </span>
         </div>
@@ -26,16 +26,16 @@ export default function Home() {
           <Link href="/inventory" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
             My Inventory
           </Link>
-          <Link href="/discovery" className="px-4 py-2 text-sm font-medium bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10">
+          <button className="px-4 py-2 text-sm font-medium bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10">
             Sign In
-          </Link>
+          </button>
         </div>
       </nav>
 
       {/* Hero Section */}
       <div>
         <div>
-          <div className="flex-grow flex flex-col items-center justify-center px-4 py-20 text-center z-10">
+          <div className="flex-grow flex flex-col items-center justify-center px-4 pt-20 pb-10 text-center z-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium mb-8">
               <Flame className="w-3 h-3" />
               <span>Discover 200+ Community DIY Projects</span>
@@ -51,7 +51,8 @@ export default function Home() {
               Stop watching tutorials you don&apos;t have parts for.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4">
+            {/* BUTTONS - Added z-20 relative so they stay clickable above the Spline canvas */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 relative z-20">
               <Link href="/inventory" className="group relative px-6 py-3 rounded-full bg-indigo-500 text-white font-medium hover:bg-indigo-600 transition-all shadow-[0_0_20px_rgba(99,102,241,0.4)]">
                 <span className="flex items-center gap-2">
                   Check Your Inventory <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -62,10 +63,22 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Floating Icons */}
-            <div className="mt-20 w-full max-w-4xl relative">
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent z-10" />
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 opacity-50">
+            {/* 3D MODEL - Added -mt-16 to pull it UP towards the buttons, and z-10 to stay behind them */}
+            <div className="w-full lg:w-1/2 h-[450px] lg:h-[600px] relative -mt-16 lg:-mt-24 z-10">
+              {/* Subtle halo behind the Spline scene */}
+              <div className="absolute w-[400px] h-[400px] bg-indigo-500/20 blur-[150px] -z-10 rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              <div className="absolute w-[600px] h-[600px] bg-fuchsia-500/15 blur-[200px] -z-10 rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+
+              <Spline
+                scene="https://prod.spline.design/DOyHBA8kAwQ-owML/scene.splinecode"
+                className="w-full h-full"
+              />
+            </div>
+
+            {/* Floating Icons - Added negative margin here too to pull them closer to the bottom of the robot */}
+            <div className="-mt-10 w-full max-w-4xl relative z-20">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0012] to-transparent z-10 pointer-events-none" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 opacity-50 relative z-20">
                 {[
                   { icon: Cpu, label: "Microcontrollers", color: "text-green-400" },
                   { icon: Blocks, label: "Sensors & Modules", color: "text-blue-400" },
@@ -79,6 +92,7 @@ export default function Home() {
                 ))}
               </div>
             </div>
+
           </div>
         </div>
       </div>
