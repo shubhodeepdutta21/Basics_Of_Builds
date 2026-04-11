@@ -1,7 +1,9 @@
 # GREY# 🤖 BOB: The Smart DIY Platform
+Site Link : https://bob-diy-platform.vercel.app/
+Demo Video : https://drive.google.com/file/d/1nEmyqFSn-MuQ92QDE-gOuM8yf3HgLuWZ/view?usp=sharing
 
  **Turn your spare parts into brilliant projects.** BOB is an innovative platform designed to empower students and makers with limited resources. Tell us what hardware you have lying around, and we will tell you exactly what you can build. Stop watching tutorials for projects you don't have the parts for.
-
+ 
 ## ✨ Key Features
 
 * **📦 Smart Inventory Management:** Easily log your microcontrollers, sensors, and power supplies. Your digital workshop follows you everywhere.
@@ -21,7 +23,7 @@
 
 Follow these steps to run the BOB platform locally on your machine.
 
-### 1. Clone the repository
+### Clone the repository
 ```bash
 git clone [https://github.com/shubhodeepdutta21/GREY.git](https://github.com/shubhodeepdutta21/GREY.git)
 cd BOB
