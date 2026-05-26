@@ -1,34 +1,10 @@
-"use client"; // ← ADD THIS
-
-import React, { useState, useEffect } from 'react'; // ← add useState, useEffect
+import React from 'react';
 import Link from 'next/link';
 import Spline from '@splinetool/react-spline/next';
-import { supabase } from '@/lib/supabaseClient'; // ← ADD THIS
+import AuthButton from '@/app/components/Authbutton';
 import { Cpu, Search, Blocks, Battery, Flame, ArrowRight } from 'lucide-react';
 
 export default function Home() {
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    // Check initial session
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-    };
-    getSession();
-
-    // Listen for auth changes in real time
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => authListener.subscription.unsubscribe();
-  }, []);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
-
   return (
     <main className="flex-grow flex flex-col relative overflow-hidden bg-[#0A0012]">
       {/* Background decorations */}
@@ -54,21 +30,7 @@ export default function Home() {
           <Link href="/inventory" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
             My Inventory
           </Link>
-          {user ? (
-            <button
-              onClick={handleSignOut}
-              className="px-4 py-2 text-sm font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-white rounded-full transition-all border border-rose-500/20"
-            >
-              Sign Out
-            </button>
-          ) : (
-            <Link
-              href="/login"
-              className="px-4 py-2 text-sm font-medium bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10"
-            >
-              Sign In
-            </Link>
-          )}
+          <AuthButton /> 
         </div>
       </nav>
 
