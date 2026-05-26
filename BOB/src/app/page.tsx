@@ -1,9 +1,34 @@
-import React from 'react';
+"use client"; // ← ADD THIS
+
+import React, { useState, useEffect } from 'react'; // ← add useState, useEffect
 import Link from 'next/link';
 import Spline from '@splinetool/react-spline/next';
+import { supabase } from '@/lib/supabaseClient'; // ← ADD THIS
 import { Cpu, Search, Blocks, Battery, Flame, ArrowRight } from 'lucide-react';
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Check initial session
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+    };
+    getSession();
+
+    // Listen for auth changes in real time
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => authListener.subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
     <main className="flex-grow flex flex-col relative overflow-hidden bg-[#0A0012]">
       {/* Background decorations */}
@@ -29,16 +54,25 @@ export default function Home() {
           <Link href="/inventory" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
             My Inventory
           </Link>
-          <Link
-            href="/login"
-            className="px-4 py-2 text-sm font-medium bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10"
-          >
-            Sign In
-          </Link>
+          {user ? (
+            <button
+              onClick={handleSignOut}
+              className="px-4 py-2 text-sm font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-white rounded-full transition-all border border-rose-500/20"
+            >
+              Sign Out
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              className="px-4 py-2 text-sm font-medium bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10"
+            >
+              Sign In
+            </Link>
+          )}
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Rest of your page stays exactly the same... */}
       <div>
         <div>
           <div className="flex-grow flex flex-col items-center justify-center px-4 pt-20 pb-10 text-center z-10">
@@ -46,18 +80,14 @@ export default function Home() {
               <Flame className="w-3 h-3" />
               <span>Discover 200+ Community DIY Projects</span>
             </div>
-
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6">
               Turn your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-fuchsia-400">spare parts</span><br />
               into brilliant projects.
             </h1>
-
             <p className="max-w-2xl text-lg md:text-xl text-slate-400 mb-10">
               Have an Arduino, a few resistors, and a spare laptop? We&apos;ll tell you exactly what you can build.
               Stop watching tutorials you don&apos;t have parts for.
             </p>
-
-            {/* BUTTONS - Added z-20 relative so they stay clickable above the Spline canvas */}
             <div className="flex flex-col sm:flex-row items-center gap-4 relative z-20">
               <Link href="/inventory" className="group relative px-6 py-3 rounded-full bg-indigo-500 text-white font-medium hover:bg-indigo-600 transition-all shadow-[0_0_20px_rgba(99,102,241,0.4)]">
                 <span className="flex items-center gap-2">
@@ -68,20 +98,14 @@ export default function Home() {
                 <Search className="w-4 h-4" /> Browse Projects
               </Link>
             </div>
-
-            {/* 3D MODEL - Added -mt-16 to pull it UP towards the buttons, and z-10 to stay behind them */}
             <div className="w-full lg:w-1/2 h-[450px] lg:h-[600px] relative -mt-16 lg:-mt-24 z-10">
-              {/* Subtle halo behind the Spline scene */}
               <div className="absolute w-[400px] h-[400px] bg-indigo-500/20 blur-[150px] -z-10 rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
               <div className="absolute w-[600px] h-[600px] bg-fuchsia-500/15 blur-[200px] -z-10 rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-
               <Spline
                 scene="https://prod.spline.design/DOyHBA8kAwQ-owML/scene.splinecode"
                 className="w-full h-full"
               />
             </div>
-
-            {/* Floating Icons - Added negative margin here too to pull them closer to the bottom of the robot */}
             <div className="-mt-10 w-full max-w-4xl relative z-20">
               <div className="absolute inset-0 bg-gradient-to-t from-[#0A0012] to-transparent z-10 pointer-events-none" />
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 opacity-50 relative z-20">
@@ -98,7 +122,6 @@ export default function Home() {
                 ))}
               </div>
             </div>
-
           </div>
         </div>
       </div>
