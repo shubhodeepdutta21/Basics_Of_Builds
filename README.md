@@ -18,7 +18,7 @@ Demo Video : https://drive.google.com/file/d/1OEJSpoGITvuhFB9oRqgWdohVYzpVVgbX/v
 
 * **Frontend:** Next.js (App Router), React, Tailwind CSS
 * **Backend & Database:** Supabase (PostgreSQL, Auth)
-* **Artificial Intelligence:** Google GenAI SDK (`gemini-2.5-flash`)
+* **Artificial Intelligence:** SDK: Cerebras Llama3.18b @cerebras/cerebras-cloud-sdk
 * **UI/Icons:** Lucide React, Spline 3D
 
 ## 🚀 Getting Started
