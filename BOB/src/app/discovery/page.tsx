@@ -11,6 +11,7 @@ import ChatBot from '../components/chatbot';
 export default function DiscoveryPage() {
   const { inventory, getQuantity } = useInventory();
   const [user, setUser] = useState<any>(null);
+  const [dbComponents, setDbComponents] = useState<any[]>([]);
 
   useEffect(() => {
     const getSession = async () => {
@@ -18,6 +19,14 @@ export default function DiscoveryPage() {
       setUser(session?.user ?? null);
     };
     getSession();
+
+    const fetchComponents = async () => {
+      const { data } = await supabase.from('components').select('*');
+      if (data && data.length > 0) {
+        setDbComponents(data);
+      }
+    };
+    fetchComponents();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
@@ -35,18 +44,29 @@ export default function DiscoveryPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiProject, setAiProject] = useState<any>(null);
 
+  // Combine database components with static mock components
+  const allComponents = useMemo(() => {
+    const map = new Map<string, any>();
+    MOCK_COMPONENTS.forEach(c => map.set(String(c.id), c));
+    dbComponents.forEach(c => map.set(String(c.id), c));
+    return Array.from(map.values());
+  }, [dbComponents]);
+
   const generateMagicProject = async () => {
+    if (inventory.length === 0) return;
     setIsGenerating(true);
     try {
       const componentNames = inventory.map(item => {
-        const comp = MOCK_COMPONENTS.find(c => c.id === item.componentId);
-        return comp?.name || "Unknown Component";
+        const comp = allComponents.find(c => String(c.id) === String(item.componentId));
+        const name = comp?.name || `Component #${item.componentId}`;
+        const qty = item.quantity > 1 ? `${item.quantity}x ` : '';
+        return `${qty}${name}`;
       });
 
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ componentNames }),
+        body: JSON.stringify({ componentNames, inventory }),
       });
 
       const data = await response.json();
@@ -69,13 +89,13 @@ export default function DiscoveryPage() {
       project.requirements.forEach(req => {
         if (!req.isOptional) {
           totalRequired += 1;
-          const userQty = getQuantity(req.componentId);
+          const userQty = getQuantity(String(req.componentId));
           if (userQty >= req.requiredQuantity) {
             matchedItems += 1;
           } else {
-            const compDef = MOCK_COMPONENTS.find(c => c.id === req.componentId);
+            const compDef = allComponents.find(c => String(c.id) === String(req.componentId));
             missingParts.push({
-              name: compDef?.name || 'Unknown',
+              name: compDef?.name || 'Unknown Item',
               needed: req.requiredQuantity,
               has: userQty
             });
@@ -91,7 +111,7 @@ export default function DiscoveryPage() {
         missingParts
       };
     }).sort((a, b) => b.matchPercentage - a.matchPercentage);
-  }, [getQuantity]);
+  }, [getQuantity, allComponents]);
 
   return (
     <main className="min-h-screen flex flex-col pt-6 px-4 md:px-8 max-w-6xl mx-auto w-full">

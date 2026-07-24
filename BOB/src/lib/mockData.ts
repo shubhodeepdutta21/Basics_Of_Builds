@@ -24,6 +24,13 @@ export const MOCK_PROJECTS = [
       { componentId: '8', requiredQuantity: 1, isOptional: false }, // Breadboard
       { componentId: '9', requiredQuantity: 5, isOptional: false }, // Wires
     ],
+    steps: [
+      "Plug the ESP32 onto the breadboard and connect VCC/GND lines to power rails.",
+      "Connect the DHT11 sensor data pin to ESP32 GPIO 4 with a pull-up resistor.",
+      "Connect the 0.96 OLED display via I2C (SDA to GPIO 21, SCL to GPIO 22).",
+      "Flash the ESP32 firmware with your Wi-Fi credentials and OpenWeatherMap sketch.",
+      "Power up via USB and verify temperature and humidity readings on the OLED display."
+    ],
     matchPercentage: 0, // dynamic
   },
   {
@@ -39,6 +46,13 @@ export const MOCK_PROJECTS = [
       { componentId: '7', requiredQuantity: 2, isOptional: false }, // Gear Motors
       { componentId: '8', requiredQuantity: 1, isOptional: false }, // Breadboard
       { componentId: '9', requiredQuantity: 10, isOptional: false }, // Wires
+    ],
+    steps: [
+      "Mount the DC gear motors onto the chassis frame and wire them to L298N motor outputs.",
+      "Connect Arduino Uno digital control pins (5, 6, 9, 10) to L298N inputs.",
+      "Attach the HC-SR04 ultrasonic sensor to the front chassis, connecting Trig to pin 12 and Echo to pin 11.",
+      "Upload the Arduino obstacle-avoidance code that reads sensor distance and steers motors.",
+      "Connect the external battery pack, place robot on the floor, and verify obstacle avoidance."
     ],
     matchPercentage: 0,
   }

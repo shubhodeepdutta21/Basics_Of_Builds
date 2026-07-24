@@ -11,17 +11,23 @@ interface Message {
     timestamp: Date;
 }
 
+export interface ProjectContext {
+    id?: string;
+    title: string;
+    description: string;
+    difficultyLevel?: string;
+    estimatedTime?: string;
+    requirements?: any[];
+    steps?: string[];
+}
+
 interface ChatBotProps {
     /** Pass the AI-generated project object so the bot has full context */
-    aiProject: {
-        title: string;
-        description: string;
-        difficultyLevel: string;
-        estimatedTime: string;
-        steps?: string[];
-    } | null;
-    /** Whether a project has been generated yet (controls button visibility) */
-    visible: boolean;
+    aiProject?: ProjectContext | null;
+    /** Pass a standard or active project object */
+    project?: ProjectContext | null;
+    /** Whether a project is active / controls button visibility */
+    visible?: boolean;
 }
 
 // ─── Typing indicator dots ─────────────────────────────────────────────────────
@@ -77,7 +83,9 @@ function Bubble({ msg }: { msg: Message }) {
 }
 
 // ─── Main ChatBot component ────────────────────────────────────────────────────
-export default function ChatBot({ aiProject, visible }: ChatBotProps) {
+export default function ChatBot({ aiProject, project, visible = true }: ChatBotProps) {
+    const activeProject = project || aiProject;
+
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
@@ -94,21 +102,21 @@ export default function ChatBot({ aiProject, visible }: ChatBotProps) {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isTyping]);
 
-    // When a new project is generated, pulse the button and auto-add greeting
+    // When an active project is set, pulse the button and auto-add greeting
     useEffect(() => {
-        if (!aiProject) return;
+        if (!activeProject) return;
         setShowPulse(true);
         setMessages([
             {
                 id: "welcome",
                 role: "assistant",
-                content: `I just invented **${aiProject.title}** for you! 🚀 Ask me anything — wiring diagrams, code snippets, component substitutions, or how to extend it.`,
+                content: `I'm ready to help you build **${activeProject.title}**! 🚀 Ask me anything — wiring diagrams, code snippets, component substitutions, or assembly steps.`,
                 timestamp: new Date(),
             },
         ]);
         const t = setTimeout(() => setShowPulse(false), 6000);
         return () => clearTimeout(t);
-    }, [aiProject]);
+    }, [activeProject]);
 
     // Focus input when chat opens
     useEffect(() => {
@@ -157,23 +165,26 @@ export default function ChatBot({ aiProject, visible }: ChatBotProps) {
         setIsTyping(true);
 
         try {
-            
             const history = messages
-                .filter(m => m.id !== "welcome" && m.id !== "welcome-reset") // skip welcome cards
+                .filter(m => m.id !== "welcome" && m.id !== "welcome-reset")
                 .map((m) => ({
                     role: m.role,
                     content: m.content,
                 }));
 
-            
-            const response = await fetch("/api/chatbot/", {
+            const response = await fetch("/api/chatbot", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     user_question: trimmed,
-                    project_title: aiProject?.title || "Unknown Hardware Assembly",
-                    project_description: aiProject?.description || "",
-                    project_steps: aiProject?.steps || [],
+                    active_project_title: activeProject?.title || "Hardware Project",
+                    project_title: activeProject?.title || "Hardware Project",
+                    project_description: activeProject?.description || "",
+                    difficulty_level: activeProject?.difficultyLevel || "",
+                    estimated_time: activeProject?.estimatedTime || "",
+                    project_steps: activeProject?.steps || [],
+                    project_instructions: Array.isArray(activeProject?.steps) ? activeProject.steps.join("\n") : "",
+                    requirements: activeProject?.requirements || [],
                     chat_history: history,
                 }),
             });
@@ -183,8 +194,6 @@ export default function ChatBot({ aiProject, visible }: ChatBotProps) {
             }
 
             const data = await response.json();
-
-            
             const replyText = data?.reply || "Sorry, I couldn't generate a troubleshooting step. Please try again.";
 
             setMessages((prev) => [
@@ -220,12 +229,12 @@ export default function ChatBot({ aiProject, visible }: ChatBotProps) {
     };
 
     const resetChat = () => {
-        if (!aiProject) return;
+        if (!activeProject) return;
         setMessages([
             {
                 id: "welcome-reset",
                 role: "assistant",
-                content: `Chat reset! Still here to help with **${aiProject.title}**. What do you need?`,
+                content: `Chat reset! Still here to help with **${activeProject.title}**. What do you need?`,
                 timestamp: new Date(),
             },
         ]);
@@ -258,9 +267,9 @@ export default function ChatBot({ aiProject, visible }: ChatBotProps) {
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-white leading-none mb-0.5">Project AI</p>
+                                <p className="text-sm font-semibold text-white leading-none mb-0.5">Project AI Assistant</p>
                                 <p className="text-xs text-fuchsia-400/70 truncate">
-                                    {aiProject ? `Advisor for: ${aiProject.title}` : "Ready when you invent a project"}
+                                    {activeProject ? `Advisor for: ${activeProject.title}` : "Ready to help with your project"}
                                 </p>
                             </div>
 
@@ -291,7 +300,7 @@ export default function ChatBot({ aiProject, visible }: ChatBotProps) {
                                         <Sparkles className="w-6 h-6 text-fuchsia-400" />
                                     </div>
                                     <p className="text-sm text-slate-400">
-                                        Click <strong className="text-fuchsia-400 font-semibold">AI Auto-Invent</strong> first to generate a project, then I'll guide you through building it.
+                                        Ask any question about your project, wiring, component pinouts, or code!
                                     </p>
                                 </div>
                             )}
@@ -315,7 +324,7 @@ export default function ChatBot({ aiProject, visible }: ChatBotProps) {
                         </div>
 
                         {/* Quick suggestions */}
-                        {messages.length === 1 && aiProject && (
+                        {messages.length === 1 && activeProject && (
                             <div className="px-4 pb-2 flex gap-2 flex-wrap flex-shrink-0">
                                 {["How do I wire this?", "Give me the code", "What components can I swap?"].map((q) => (
                                     <button
@@ -344,14 +353,14 @@ export default function ChatBot({ aiProject, visible }: ChatBotProps) {
                                     value={input}
                                     onChange={handleInputChange}
                                     onKeyDown={handleKeyDown}
-                                    placeholder={aiProject ? "Ask about your project…" : "Generate a project first…"}
-                                    disabled={!aiProject || isTyping}
+                                    placeholder={activeProject ? "Ask about your project…" : "Select or generate a project first…"}
+                                    disabled={!activeProject || isTyping}
                                     className="flex-1 bg-transparent text-sm text-white placeholder-slate-600 resize-none outline-none leading-relaxed disabled:opacity-40"
                                     style={{ maxHeight: "120px" }}
                                 />
                                 <button
                                     onClick={sendMessage}
-                                    disabled={!input.trim() || !aiProject || isTyping}
+                                    disabled={!input.trim() || !activeProject || isTyping}
                                     className="w-8 h-8 rounded-lg bg-gradient-to-br from-fuchsia-600 to-indigo-600 flex items-center justify-center flex-shrink-0 transition-all hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_0_10px_rgba(192,38,211,0.3)] disabled:shadow-none"
                                 >
                                     {isTyping ? (

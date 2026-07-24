@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useInventory } from '@/lib/InventoryContext';
 
+import { MOCK_COMPONENTS } from '@/lib/mockData';
 import { supabase } from '@/lib/db';
 import { Cpu, Plus, Minus, ArrowRight, Trash2 } from 'lucide-react';
 
@@ -15,23 +16,29 @@ export default function InventoryPage() {
   // Fetch the data as soon as the page loads ⏳
   useEffect(() => {
     const fetchComponents = async () => {
-      const { data, error } = await supabase.from('components').select('*');
-      if (error) {
-        console.error("Error fetching components:", error);
-      } else if (data) {
-        setComponents(data);
+      try {
+        const { data, error } = await supabase.from('components').select('*');
+        if (error || !data || data.length === 0) {
+          if (error) {
+            console.warn("Supabase error fetching components, falling back to mock components:", error);
+          }
+          setComponents(MOCK_COMPONENTS);
+        } else {
+          setComponents(data);
+        }
+      } catch (err) {
+        console.warn("Failed to reach Supabase, falling back to mock components:", err);
+        setComponents(MOCK_COMPONENTS);
       }
     };
 
     fetchComponents();
   }, []);
 
-  const groupedComponents = components.reduce((acc, current) => {
+  const groupedComponents: Record<string, any[]> = components.reduce((acc: Record<string, any[]>, current: any) => {
     (acc[current.category] = acc[current.category] || []).push(current);
     return acc;
-  }, {} as Record<string, any[]>);
-
-
+  }, {});
 
   return (
     <main className="min-h-screen flex flex-col pt-6 px-4 md:px-8 max-w-6xl mx-auto w-full">
@@ -60,7 +67,7 @@ export default function InventoryPage() {
               <Cpu className="w-5 h-5" /> {category}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {items.map(component => {
+              {items.map((component: any) => {
                 const qty = getQuantity(component.id);
                 const isSelected = qty > 0;
 

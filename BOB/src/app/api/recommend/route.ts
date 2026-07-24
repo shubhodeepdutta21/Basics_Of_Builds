@@ -4,11 +4,18 @@ import { supabase } from "@/lib/db";
 export async function POST(request: Request) {
     try {
         // 1. Get the user's inventory from the frontend request
-        // This will be an array of component IDs they own, like: ['1', '3', '5']
         const body = await request.json();
-        const userInventoryIds = body.inventory || [];
+        const rawInventory = body.inventory || body.componentIds || [];
 
-        // 2. Fetch all projects AND their requirements in one go! ✨
+        // Extract component IDs as string array regardless of object vs string format
+        const userInventoryIds = rawInventory.map((item: any) => {
+            if (typeof item === 'object' && item !== null) {
+                return String(item.componentId || item.id || '');
+            }
+            return String(item);
+        }).filter(Boolean);
+
+        // 2. Fetch all projects AND their requirements
         const { data: projects, error } = await supabase
             .from("projects")
             .select(`
@@ -24,24 +31,20 @@ export async function POST(request: Request) {
 
         if (error) throw error;
 
-        // 3. The Brain! 🧠 Calculate the match percentage for each project
+        // 3. Calculate match percentage for each project using string matching
         const recommendations = projects.map((project) => {
             const reqs = project.project_requirements;
 
-            // If a project has no requirements, it's a 100% match!
             if (!reqs || reqs.length === 0) return { ...project, matchPercentage: 100 };
 
-            // Check how many of the required components the user actually owns
             const matchedCount = reqs.filter((req) =>
-                userInventoryIds.includes(req.component_id)
+                userInventoryIds.includes(String(req.component_id))
             ).length;
 
-            // Calculate the score (e.g., 3 out of 4 items = 75%)
             const matchPercentage = Math.round((matchedCount / reqs.length) * 100);
 
-            // Find exactly what they need to buy to finish it
             const missingComponents = reqs.filter((req) =>
-                !userInventoryIds.includes(req.component_id)
+                !userInventoryIds.includes(String(req.component_id))
             );
 
             return {
@@ -51,7 +54,7 @@ export async function POST(request: Request) {
             };
         });
 
-        // 4. Sort the projects so the 100% matches are right at the very top! 🏆
+        // 4. Sort recommendations by highest match
         recommendations.sort((a, b) => b.matchPercentage - a.matchPercentage);
 
         return NextResponse.json({ recommendations });
