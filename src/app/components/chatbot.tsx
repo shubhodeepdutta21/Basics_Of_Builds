@@ -37,7 +37,7 @@ function TypingDots() {
             {[0, 1, 2].map((i) => (
                 <span
                     key={i}
-                    className="w-2 h-2 rounded-full bg-fuchsia-400 animate-bounce"
+                    className="w-2 h-2 rounded-full bg-[#e8c547] animate-bounce"
                     style={{ animationDelay: `${i * 0.15}s`, animationDuration: "0.8s" }}
                 />
             ))}
@@ -49,12 +49,11 @@ function TypingDots() {
 function Bubble({ msg }: { msg: Message }) {
     const isUser = msg.role === "user";
 
-    // Very basic markdown-bold renderer (wraps **text** in <strong>)
     const renderContent = (text: string) => {
         const parts = text.split(/(\*\*[^*]+\*\*)/g);
         return parts.map((part, i) =>
             part.startsWith("**") && part.endsWith("**") ? (
-                <strong key={i} className="font-semibold text-white">
+                <strong key={i} className="font-semibold text-[#e8c547]">
                     {part.slice(2, -2)}
                 </strong>
             ) : (
@@ -64,16 +63,16 @@ function Bubble({ msg }: { msg: Message }) {
     };
 
     return (
-        <div className={`flex gap-2 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+        <div className={`flex gap-2 font-grotesk ${isUser ? "flex-row-reverse" : "flex-row"}`}>
             {!isUser && (
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-fuchsia-600 to-indigo-600 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-[0_0_8px_rgba(192,38,211,0.5)]">
-                    <Bot className="w-3.5 h-3.5 text-white" />
+                <div className="w-7 h-7 rounded-full bg-[#1f1f1f] border border-[#3a3a3a] flex items-center justify-center flex-shrink-0 mt-0.5 shadow-[0_0_8px_rgba(232,197,71,0.3)]">
+                    <Bot className="w-3.5 h-3.5 text-[#e8c547]" />
                 </div>
             )}
             <div
                 className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${isUser
-                        ? "bg-gradient-to-br from-fuchsia-600 to-indigo-600 text-white rounded-tr-sm shadow-[0_0_12px_rgba(192,38,211,0.3)]"
-                        : "bg-slate-800 text-slate-200 rounded-tl-sm border border-white/5"
+                        ? "bg-[#e8c547] text-[#0d0d0d] font-medium rounded-tr-sm shadow-[0_0_12px_rgba(232,197,71,0.2)]"
+                        : "bg-[#1f1f1f] text-[#f0ede6] rounded-tl-sm border border-[#2a2a2a]"
                     }`}
             >
                 {renderContent(msg.content)}
@@ -245,7 +244,7 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
     return (
         <>
             {/* ── Floating trigger button ── */}
-            <div className="fixed bottom-6 right-6 z-50" ref={chatPanelRef}>
+            <div className="fixed bottom-6 right-6 z-50 font-grotesk" ref={chatPanelRef}>
                 {/* Chat panel */}
                 <div
                     className={`absolute bottom-16 right-0 w-[360px] sm:w-[400px] transition-all duration-300 origin-bottom-right ${isOpen
@@ -254,22 +253,19 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
                         }`}
                     style={{ maxHeight: "calc(100vh - 100px)" }}
                 >
-                    <div className="flex flex-col bg-slate-950 border border-fuchsia-500/30 rounded-2xl overflow-hidden shadow-[0_8px_60px_rgba(192,38,211,0.25),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-xl"
+                    <div className="flex flex-col bg-[#161616] border border-[#e8c547]/40 rounded-2xl overflow-hidden shadow-[0_8px_60px_rgba(232,197,71,0.2)] backdrop-blur-xl"
                         style={{ height: "520px" }}>
 
                         {/* Header */}
-                        <div className="relative flex items-center gap-3 px-4 py-3.5 border-b border-white/5 bg-gradient-to-r from-fuchsia-600/10 to-indigo-600/10 flex-shrink-0">
-                            {/* Subtle top glow */}
-                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/50 to-transparent" />
-
-                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-fuchsia-600 to-indigo-600 flex items-center justify-center shadow-[0_0_12px_rgba(192,38,211,0.5)]">
-                                <Bot className="w-4 h-4 text-white" />
+                        <div className="relative flex items-center gap-3 px-4 py-3.5 border-b border-[#2a2a2a] bg-[#1f1f1f] flex-shrink-0">
+                            <div className="w-8 h-8 rounded-xl bg-[#0d0d0d] border border-[#e8c547]/40 flex items-center justify-center shadow-[0_0_12px_rgba(232,197,71,0.3)]">
+                                <Bot className="w-4 h-4 text-[#e8c547]" />
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-white leading-none mb-0.5">Project AI Assistant</p>
-                                <p className="text-xs text-fuchsia-400/70 truncate">
-                                    {activeProject ? `Advisor for: ${activeProject.title}` : "Ready to help with your project"}
+                                <p className="text-sm font-semibold text-[#f0ede6] leading-none mb-0.5">Project AI Assistant</p>
+                                <p className="text-xs font-mono text-[#e8c547] truncate">
+                                    {activeProject ? `Advisor: ${activeProject.title}` : "Ready to help with your project"}
                                 </p>
                             </div>
 
@@ -277,7 +273,7 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
                                 {messages.length > 1 && (
                                     <button
                                         onClick={resetChat}
-                                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors"
+                                        className="w-7 h-7 rounded-lg flex items-center justify-center text-[#888888] hover:text-[#f0ede6] hover:bg-[#2a2a2a] transition-colors"
                                         title="Reset chat"
                                     >
                                         <RotateCcw className="w-3.5 h-3.5" />
@@ -285,7 +281,7 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
                                 )}
                                 <button
                                     onClick={() => setIsOpen(false)}
-                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors"
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-[#888888] hover:text-[#f0ede6] hover:bg-[#2a2a2a] transition-colors"
                                 >
                                     <ChevronDown className="w-4 h-4" />
                                 </button>
@@ -293,13 +289,13 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
                         </div>
 
                         {/* Messages area */}
-                        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+                        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#3a3a3a]">
                             {messages.length === 0 && (
                                 <div className="flex flex-col items-center justify-center h-full text-center px-6 gap-3">
-                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-fuchsia-600/20 to-indigo-600/20 flex items-center justify-center border border-fuchsia-500/20">
-                                        <Sparkles className="w-6 h-6 text-fuchsia-400" />
+                                    <div className="w-12 h-12 rounded-2xl bg-[#1f1f1f] flex items-center justify-center border border-[#e8c547]/30">
+                                        <Sparkles className="w-6 h-6 text-[#e8c547]" />
                                     </div>
-                                    <p className="text-sm text-slate-400">
+                                    <p className="text-sm text-[#888888]">
                                         Ask any question about your project, wiring, component pinouts, or code!
                                     </p>
                                 </div>
@@ -311,10 +307,10 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
 
                             {isTyping && (
                                 <div className="flex gap-2">
-                                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-fuchsia-600 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(192,38,211,0.5)]">
-                                        <Bot className="w-3.5 h-3.5 text-white" />
+                                    <div className="w-7 h-7 rounded-full bg-[#1f1f1f] border border-[#3a3a3a] flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(232,197,71,0.3)]">
+                                        <Bot className="w-3.5 h-3.5 text-[#e8c547]" />
                                     </div>
-                                    <div className="bg-slate-800 border border-white/5 rounded-2xl rounded-tl-sm">
+                                    <div className="bg-[#1f1f1f] border border-[#2a2a2a] rounded-2xl rounded-tl-sm">
                                         <TypingDots />
                                     </div>
                                 </div>
@@ -336,7 +332,7 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
                                                 inputRef.current?.focus();
                                             }, 0);
                                         }}
-                                        className="text-xs px-3 py-1.5 rounded-full border border-fuchsia-500/20 text-fuchsia-400/80 hover:text-fuchsia-300 hover:border-fuchsia-500/40 hover:bg-fuchsia-500/5 transition-all"
+                                        className="text-xs font-mono px-3 py-1.5 rounded-full border border-[#e8c547]/30 text-[#e8c547] hover:bg-[#e8c547]/10 transition-all"
                                     >
                                         {q}
                                     </button>
@@ -345,8 +341,8 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
                         )}
 
                         {/* Input area */}
-                        <div className="px-3 pb-3 pt-2 flex-shrink-0 border-t border-white/5">
-                            <div className="flex items-end gap-2 bg-slate-900 rounded-xl border border-white/10 focus-within:border-fuchsia-500/40 focus-within:shadow-[0_0_0_3px_rgba(192,38,211,0.1)] transition-all px-3 py-2">
+                        <div className="px-3 pb-3 pt-2 flex-shrink-0 border-t border-[#2a2a2a] bg-[#0d0d0d]">
+                            <div className="flex items-end gap-2 bg-[#161616] rounded-xl border border-[#3a3a3a] focus-within:border-[#e8c547] transition-all px-3 py-2">
                                 <textarea
                                     ref={inputRef}
                                     rows={1}
@@ -355,54 +351,51 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
                                     onKeyDown={handleKeyDown}
                                     placeholder={activeProject ? "Ask about your project…" : "Select or generate a project first…"}
                                     disabled={!activeProject || isTyping}
-                                    className="flex-1 bg-transparent text-sm text-white placeholder-slate-600 resize-none outline-none leading-relaxed disabled:opacity-40"
+                                    className="flex-1 bg-transparent text-sm text-[#f0ede6] placeholder-[#888888] resize-none outline-none leading-relaxed disabled:opacity-40"
                                     style={{ maxHeight: "120px" }}
                                 />
                                 <button
                                     onClick={sendMessage}
                                     disabled={!input.trim() || !activeProject || isTyping}
-                                    className="w-8 h-8 rounded-lg bg-gradient-to-br from-fuchsia-600 to-indigo-600 flex items-center justify-center flex-shrink-0 transition-all hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_0_10px_rgba(192,38,211,0.3)] disabled:shadow-none"
+                                    className="w-8 h-8 rounded-lg bg-[#e8c547] hover:bg-[#c4a332] text-[#0d0d0d] flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_0_10px_rgba(232,197,71,0.2)] disabled:shadow-none"
                                 >
                                     {isTyping ? (
-                                        <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                     ) : (
-                                        <Send className="w-3.5 h-3.5 text-white" />
+                                        <Send className="w-3.5 h-3.5" />
                                     )}
                                 </button>
                             </div>
-                            <p className="text-center text-[10px] text-slate-700 mt-1.5">
+                            <p className="text-center text-[10px] font-mono text-[#888888] mt-1.5">
                                 Enter to send · Shift+Enter for new line
                             </p>
                         </div>
                     </div>
                 </div>
 
-                {/* The FAB button */}
+                {/* FAB button */}
                 <button
                     onClick={() => setIsOpen((o) => !o)}
-                    className={`relative w-14 h-14 rounded-2xl bg-gradient-to-br from-fuchsia-600 to-indigo-600 flex items-center justify-center shadow-[0_4px_20px_rgba(192,38,211,0.5)] transition-all duration-300 hover:shadow-[0_4px_30px_rgba(192,38,211,0.7)] hover:scale-105 active:scale-95 ${isOpen ? "rotate-0" : ""
-                        }`}
+                    className="relative w-14 h-14 rounded-2xl bg-[#e8c547] hover:bg-[#c4a332] text-[#0d0d0d] flex items-center justify-center shadow-[0_4px_20px_rgba(232,197,71,0.4)] transition-all duration-300 hover:scale-105 active:scale-95"
                     title="Open Project AI chat"
                 >
-                    {/* Pulse rings when a new project arrives */}
                     {showPulse && !isOpen && (
                         <>
-                            <span className="absolute inset-0 rounded-2xl bg-fuchsia-500/40 animate-ping" />
-                            <span className="absolute -inset-1 rounded-2xl bg-fuchsia-500/20 animate-ping" style={{ animationDelay: "0.3s" }} />
+                            <span className="absolute inset-0 rounded-2xl bg-[#e8c547]/40 animate-ping" />
+                            <span className="absolute -inset-1 rounded-2xl bg-[#e8c547]/20 animate-ping" style={{ animationDelay: "0.3s" }} />
                         </>
                     )}
 
-                    {/* Unread dot */}
                     {!isOpen && messages.length > 0 && !hasBeenOpened && (
-                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 border-2 border-slate-950 text-[9px] text-white flex items-center justify-center font-bold">
+                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#e06b35] border-2 border-[#0d0d0d] text-[9px] text-white flex items-center justify-center font-bold font-mono">
                             1
                         </span>
                     )}
 
                     {isOpen ? (
-                        <X className="w-5 h-5 text-white transition-transform" />
+                        <X className="w-5 h-5 transition-transform" />
                     ) : (
-                        <Bot className="w-6 h-6 text-white" />
+                        <Bot className="w-6 h-6" />
                     )}
                 </button>
             </div>

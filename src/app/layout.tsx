@@ -1,23 +1,25 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
+import { InventoryProvider } from "@/lib/InventoryContext";
+import Navbar from "@/app/components/Navbar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const spaceMono = Space_Mono({
+  variable: "--font-space-mono",
   subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "BOB - DIY Tech Project Discovery",
-  description: "Find amazing tech projects based on the hardware and components you already own.",
+  title: "BOB — Build Out of Broken",
+  description: "Log the scrap parts collecting dust in your garage. BOB finds what you can actually build — no shopping required.",
 };
-
-import { InventoryProvider } from "@/lib/InventoryContext";
 
 export default function RootLayout({
   children,
@@ -25,16 +27,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark h-full antialiased scroll-smooth ">
-      <body suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} min-h-full flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500/30`}>
+    <html lang="en" className="dark h-full antialiased scroll-smooth">
+      <body
+        suppressHydrationWarning
+        className={`${spaceGrotesk.variable} ${spaceMono.variable} min-h-full flex flex-col bg-[#0d0d0d] text-[#f0ede6] selection:bg-[#e8c547]/30 font-grotesk`}
+      >
         <InventoryProvider>
-          {children}
+          <Navbar />
+          <div className="flex-grow pt-[60px]">
+            {children}
+          </div>
         </InventoryProvider>
       </body>
     </html>
   );
 }
-
-
-
-

@@ -1,89 +1,221 @@
 "use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Must be next/navigation for App Router!
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
+const AUTH_PARTS = ['🔧', '⚙️', '🔌', '💡', '🔋', '🖨', '📡', '🔩', '🛠'];
+
 export default function LoginPage() {
-    const router = useRouter();
+  const router = useRouter();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [glowIdx, setGlowIdx] = useState(0);
 
-    // ✨ THE FIX: Listen for auth changes and redirect! ✨
-    useEffect(() => {
-        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN') {
-                // As soon as they sign in, send them to the Discovery page!
-                router.push('/discovery');
-            }
-        });
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || session?.user) {
+        router.push('/discovery');
+      }
+    });
 
-        // Cleanup the listener when the component unmounts
-        return () => {
-            authListener.subscription.unsubscribe();
-        };
-    }, [router]);
+    // Animate glowing grid item on right side
+    const interval = setInterval(() => {
+      setGlowIdx(Math.floor(Math.random() * 9));
+    }, 800);
 
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-[#050505] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a103c] via-[#050505] to-[#050505] p-4 font-sans">
-            <div className="w-full max-w-md mx-auto p-8 bg-[#0D0D12] rounded-2xl border border-[#1F1F2E] shadow-2xl">
-                <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-white mb-2">Welcome to BOB</h2>
-                    <p className="text-slate-400">Sign in to sync your hardware workshop.</p>
-                </div>
+    return () => {
+      authListener.subscription.unsubscribe();
+      clearInterval(interval);
+    };
+  }, [router]);
 
-                <Auth
-                    supabaseClient={supabase}
-                    appearance={{
-                        theme: ThemeSupa,
-                        variables: {
-                            default: {
-                                colors: {
-                                    brand: '#6366F1',
-                                    brandAccent: '#4F46E5',
-                                    brandButtonText: 'white',
-                                    defaultButtonBackground: '#13131A',
-                                    defaultButtonBackgroundHover: '#1E1E28',
-                                    defaultButtonBorder: '#1F1F2E',
-                                    defaultButtonText: 'white',
-                                    inputBackground: '#09090D',
-                                    inputBorder: '#1F1F2E',
-                                    inputBorderHover: '#6366F1',
-                                    inputBorderFocus: '#6366F1',
-                                    inputText: 'white',
-                                    inputLabelText: '#94A3B8',
-                                    inputPlaceholder: '#4A4A5C',
-                                    messageText: '#94A3B8',
-                                    dividerBackground: '#1F1F2E',
-                                    anchorTextColor: '#6366F1',
-                                    anchorTextHoverColor: '#818CF8',
-                                },
-                                radii: {
-                                    borderRadiusButton: '8px',
-                                    buttonBorderRadius: '8px',
-                                    inputBorderRadius: '8px',
-                                },
-                                borderWidths: {
-                                    buttonBorderWidth: '1px',
-                                    inputBorderWidth: '1px',
-                                },
-                                space: {
-                                    buttonPadding: '12px 15px',
-                                    inputPadding: '12px 15px',
-                                },
-                            },
-                        },
-                        className: {
-                            button: 'transition-all duration-200 font-medium',
-                            input: 'transition-all duration-200',
-                        }
-                    }}
-                    providers={['google']}
-                    view="sign_up"
-                    showLinks={true}
-                    dark={true}
-                />
-            </div>
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { username } }
+      });
+      if (error) alert(error.message);
+      else router.push('/discovery');
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      if (error) alert(error.message);
+      else router.push('/discovery');
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/discovery` }
+    });
+  };
+
+  return (
+    <div className="min-h-[calc(100vh-60px)] grid grid-cols-1 md:grid-cols-2 bg-[#0d0d0d] text-[#f0ede6] font-grotesk">
+      
+      {/* ── LEFT SIDE: AUTH FORM ── */}
+      <div className="bg-[#161616] border-r border-[#2a2a2a] flex flex-col justify-center p-8 sm:p-16">
+        <div className="mb-10">
+          <div className="font-mono text-2xl font-bold text-[#e8c547] tracking-wider mb-0.5">BOB</div>
+          <div className="font-mono text-[10px] text-[#888888] tracking-[2px]">BUILD OUT OF BROKEN</div>
         </div>
-    );
+
+        {!isSignUp ? (
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">Welcome back</h2>
+            <p className="text-xs sm:text-sm text-[#888888] mb-8">Sign in to access your parts inventory and community recipes.</p>
+
+            <form onSubmit={handleAuth} className="space-y-4">
+              <div>
+                <label className="block font-mono text-xs text-[#888888] uppercase mb-1.5">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="maker@workshop.com"
+                  className="w-full bg-[#0d0d0d] border border-[#3a3a3a] text-[#f0ede6] text-sm px-4 py-3 rounded-lg outline-none focus:border-[#e8c547] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block font-mono text-xs text-[#888888] uppercase mb-1.5">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-[#0d0d0d] border border-[#3a3a3a] text-[#f0ede6] text-sm px-4 py-3 rounded-lg outline-none focus:border-[#e8c547] transition-colors"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-[#e8c547] hover:bg-[#c4a332] text-[#0d0d0d] font-bold rounded-lg transition-all text-sm mt-2 shadow-[0_0_15px_rgba(232,197,71,0.2)]"
+              >
+                Sign In
+              </button>
+            </form>
+
+            <div className="flex items-center gap-4 my-6">
+              <hr className="flex-1 border-t border-[#2a2a2a]" />
+              <span className="text-xs font-mono text-[#888888]">or</span>
+              <hr className="flex-1 border-t border-[#2a2a2a]" />
+            </div>
+
+            <button
+              onClick={handleGoogleSignIn}
+              className="w-full py-3 bg-[#0d0d0d] border border-[#3a3a3a] hover:border-[#e8c547] text-[#f0ede6] hover:text-[#e8c547] rounded-lg transition-all flex items-center justify-center gap-3 text-sm"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              Continue with Google
+            </button>
+
+            <p className="text-center text-xs text-[#888888] mt-6">
+              No account?{' '}
+              <button onClick={() => setIsSignUp(true)} className="text-[#e8c547] underline hover:text-[#c4a332]">
+                Create one free
+              </button>
+            </p>
+          </div>
+        ) : (
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">Join the makers</h2>
+            <p className="text-xs sm:text-sm text-[#888888] mb-8">Create your free account and start turning scrap into projects.</p>
+
+            <form onSubmit={handleAuth} className="space-y-4">
+              <div>
+                <label className="block font-mono text-xs text-[#888888] uppercase mb-1.5">Username</label>
+                <input
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="maker_handle"
+                  className="w-full bg-[#0d0d0d] border border-[#3a3a3a] text-[#f0ede6] text-sm px-4 py-3 rounded-lg outline-none focus:border-[#e8c547] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block font-mono text-xs text-[#888888] uppercase mb-1.5">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="maker@workshop.com"
+                  className="w-full bg-[#0d0d0d] border border-[#3a3a3a] text-[#f0ede6] text-sm px-4 py-3 rounded-lg outline-none focus:border-[#e8c547] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block font-mono text-xs text-[#888888] uppercase mb-1.5">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Choose a strong password"
+                  className="w-full bg-[#0d0d0d] border border-[#3a3a3a] text-[#f0ede6] text-sm px-4 py-3 rounded-lg outline-none focus:border-[#e8c547] transition-colors"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-[#e8c547] hover:bg-[#c4a332] text-[#0d0d0d] font-bold rounded-lg transition-all text-sm mt-2 shadow-[0_0_15px_rgba(232,197,71,0.2)]"
+              >
+                Create Account
+              </button>
+            </form>
+
+            <p className="text-center text-xs text-[#888888] mt-6">
+              Already have one?{' '}
+              <button onClick={() => setIsSignUp(false)} className="text-[#e8c547] underline hover:text-[#c4a332]">
+                Sign in
+              </button>
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ── RIGHT SIDE: ANIMATED PARTS GRID ── */}
+      <div className="hidden md:flex flex-col items-center justify-center p-12 bg-[#0d0d0d] relative overflow-hidden">
+        <div className="grid grid-cols-3 gap-4 w-full max-w-xs">
+          {AUTH_PARTS.map((emoji, idx) => (
+            <div
+              key={idx}
+              className={`aspect-square rounded-xl bg-[#161616] border flex items-center justify-center text-2xl transition-all duration-300 ${
+                glowIdx === idx
+                  ? 'border-[#e8c547] bg-[#e8c547]/10 shadow-[0_0_20px_rgba(232,197,71,0.2)] scale-105'
+                  : 'border-[#2a2a2a]'
+              }`}
+            >
+              {emoji}
+            </div>
+          ))}
+        </div>
+        <div className="mt-8 text-center font-mono text-xs tracking-[2px] text-[#888888] uppercase">
+          YOUR PARTS · YOUR PROJECTS · YOUR BUILD
+        </div>
+      </div>
+
+    </div>
+  );
 }

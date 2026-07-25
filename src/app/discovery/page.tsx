@@ -4,14 +4,15 @@ import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useInventory } from '@/lib/InventoryContext';
 import { MOCK_PROJECTS, MOCK_COMPONENTS } from '@/lib/mockData';
-import { CheckCircle2, CircleDashed, Clock, Sparkles, Loader2, Bot } from 'lucide-react';
+import { CheckCircle2, CircleDashed, Clock, Sparkles, Loader2, Bot, ArrowRight, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import ChatBot from '../components/chatbot';
 
 export default function DiscoveryPage() {
-  const { inventory, getQuantity } = useInventory();
+  const { inventory, getQuantity, aiProject, setAiProject, clearAiProject } = useInventory();
   const [user, setUser] = useState<any>(null);
   const [dbComponents, setDbComponents] = useState<any[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     const getSession = async () => {
@@ -36,13 +37,6 @@ export default function DiscoveryPage() {
       authListener.subscription.unsubscribe();
     };
   }, []);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
-
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [aiProject, setAiProject] = useState<any>(null);
 
   // Combine database components with static mock components
   const allComponents = useMemo(() => {
@@ -114,159 +108,156 @@ export default function DiscoveryPage() {
   }, [getQuantity, allComponents]);
 
   return (
-    <main className="min-h-screen flex flex-col pt-6 px-4 md:px-8 max-w-6xl mx-auto w-full">
+    <main className="min-h-screen flex flex-col bg-[#0d0d0d] text-[#f0ede6] font-grotesk pt-6 px-4 md:px-8 max-w-6xl mx-auto w-full pb-20">
 
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 pb-4 border-b border-white/10 gap-4">
+      {/* ── HEADER ── */}
+      <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 pb-6 border-b border-[#2a2a2a] gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Project Discovery</h1>
-          <p className="text-slate-400">Based on your inventory, here is what you can build today.</p>
-          {user && (
-            <p className="text-sm text-indigo-400 mt-2 font-medium">
-              Logged in as: {user.email}
-            </p>
-          )}
+          <p className="font-mono text-xs tracking-[3px] text-[#e06b35] uppercase mb-1">Recipe Matching</p>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Project Discovery</h1>
+          <p className="text-[#888888] text-sm mt-1">Based on your inventory, here is what you can build today.</p>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={generateMagicProject}
             disabled={isGenerating || inventory.length === 0}
-            className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white rounded-lg hover:from-fuchsia-500 hover:to-indigo-500 transition-all flex items-center gap-2 disabled:opacity-50 shadow-[0_0_15px_rgba(192,38,211,0.4)] border border-fuchsia-400/30"
+            className="px-5 py-2.5 text-sm font-bold bg-[#e8c547] hover:bg-[#c4a332] text-[#0d0d0d] rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 shadow-[0_0_15px_rgba(232,197,71,0.25)]"
           >
             {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {isGenerating ? "Inventing..." : "AI Auto-Invent"}
+            {isGenerating ? "Inventing..." : aiProject ? "Re-Invent Project" : "AI Auto-Invent"}
           </button>
 
-          <Link href="/inventory" className="px-4 py-2 text-sm font-medium border border-white/20 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-            Update Inventory
+          <Link
+            href="/inventory"
+            className="px-4 py-2.5 text-sm font-mono border border-[#3a3a3a] text-[#888888] hover:text-[#f0ede6] hover:bg-[#1f1f1f] rounded-lg transition-colors"
+          >
+            Update Inventory ({inventory.length} parts)
           </Link>
-
-          {user ? (
-            <button
-              onClick={handleSignOut}
-              className="px-4 py-2 text-sm font-medium border border-rose-500/30 text-rose-400 hover:text-white hover:bg-rose-500/20 rounded-lg transition-colors"
-            >
-              Sign Out
-            </button>
-          ) : (
-            <Link
-              href="/login"
-              className="px-4 py-2 text-sm font-medium border border-indigo-500/30 text-indigo-400 hover:text-white hover:bg-indigo-500/20 rounded-lg transition-colors"
-            >
-              Sign In
-            </Link>
-          )}
         </div>
       </div>
 
       {inventory.length === 0 && (
-        <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-6 text-center mb-8">
-          <Sparkles className="w-8 h-8 text-indigo-400 mx-auto mb-3" />
-          <h2 className="text-xl font-medium text-white mb-2">You haven&apos;t added any components yet!</h2>
-          <p className="text-slate-400 mb-4">Go tell us what hardware you have, and we&apos;ll find matching projects.</p>
-          <Link href="/inventory" className="inline-block px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-medium transition-colors">
-            Go to Inventory
+        <div className="bg-[#161616] border border-[#e8c547]/30 rounded-xl p-8 text-center mb-8">
+          <Sparkles className="w-8 h-8 text-[#e8c547] mx-auto mb-3" />
+          <h2 className="text-xl font-bold text-[#f0ede6] mb-2">You haven&apos;t added any components yet!</h2>
+          <p className="text-[#888888] text-sm mb-6 max-w-md mx-auto">Go tell us what hardware you have in your workshop, and we&apos;ll find matching project recipes.</p>
+          <Link
+            href="/inventory"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#e8c547] hover:bg-[#c4a332] text-[#0d0d0d] font-bold rounded-lg transition-colors text-sm"
+          >
+            Go to Inventory <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+      {/* ── PROJECTS GRID ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
 
+        {/* AI Invented Project Banner (Persisted in Global State) */}
         {aiProject && (
-          <div className="group flex flex-col bg-slate-900 border-2 border-fuchsia-500/50 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(192,38,211,0.15)] md:col-span-2 lg:col-span-3 relative">
-            <div className="absolute top-0 right-0 bg-fuchsia-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1 z-30">
-              <Bot className="w-3 h-3" /> AI INVENTED FOR YOU
+          <div className="flex flex-col bg-[#161616] border-2 border-[#e8c547] rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(232,197,71,0.15)] md:col-span-2 lg:col-span-3 relative">
+            <div className="absolute top-0 right-0 bg-[#e8c547] text-[#0d0d0d] font-mono text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-2 z-30 tracking-wider">
+              <Bot className="w-3.5 h-3.5" /> AI INVENTED FOR YOU
+              <button
+                onClick={clearAiProject}
+                title="Dismiss this AI suggestion"
+                className="ml-2 text-[#0d0d0d] hover:text-rose-900 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <div className="p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start relative z-20">
-              <div className="flex-1">
+            <div className="p-6 md:p-8 flex flex-col gap-6 relative z-20">
+              <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30">
-                    {aiProject.difficultyLevel}
+                  <span className="px-2.5 py-1 rounded text-xs font-mono font-semibold bg-[#e8c547]/10 text-[#e8c547] border border-[#e8c547]/30">
+                    {aiProject.difficultyLevel || 'Intermediate'}
                   </span>
-                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-white/5 text-slate-300 border border-white/10">
-                    <Clock className="w-3 h-3" /> {aiProject.estimatedTime}
+                  <span className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono text-[#888888] bg-[#1f1f1f] border border-[#3a3a3a]">
+                    <Clock className="w-3 h-3" /> {aiProject.estimatedTime || '2 Hours'}
                   </span>
                 </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{aiProject.title}</h2>
-                <p className="text-slate-300 mb-6">{aiProject.description}</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-[#f0ede6] mb-3">{aiProject.title}</h2>
+                <p className="text-[#888888] text-sm leading-relaxed mb-6">{aiProject.description}</p>
 
-                <div className="bg-black/50 rounded-xl p-4 border border-white/5">
-                  <h3 className="text-sm font-semibold text-fuchsia-400 mb-3 uppercase tracking-wider">How to build it:</h3>
-                  <ul className="space-y-2">
+                <div className="bg-[#0d0d0d] rounded-xl p-5 border border-[#2a2a2a]">
+                  <h3 className="font-mono text-xs font-semibold text-[#e8c547] uppercase tracking-wider mb-4">How to build it:</h3>
+                  <ul className="space-y-3">
                     {aiProject.steps?.map((step: string, idx: number) => (
-                      <li key={idx} className="text-sm text-slate-400 flex gap-3">
-                        <span className="text-fuchsia-500 font-bold">{idx + 1}.</span> {step}
+                      <li key={idx} className="text-sm text-[#f0ede6] flex gap-3 leading-relaxed">
+                        <span className="font-mono text-[#e8c547] font-bold">{idx + 1}.</span> {step}
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                {/* ── NEW: "Chat about this project" hint ── */}
-                <p className="mt-4 text-xs text-fuchsia-400/60 flex items-center gap-1.5">
-                  <Bot className="w-3 h-3" />
-                  Have questions? Use the <span className="font-semibold text-fuchsia-400">Project AI</span> button in the bottom-right corner.
+                <p className="mt-4 text-xs font-mono text-[#888888] flex items-center gap-1.5">
+                  <Bot className="w-3.5 h-3.5 text-[#e8c547]" />
+                  Have questions? Use the <span className="font-semibold text-[#e8c547]">Project AI</span> button in the bottom-right corner.
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {recommendedProjects.map(project => (
+        {/* Recommended Projects List */}
+        {recommendedProjects.map((project) => (
           <Link
             href={`/projects/${project.id}`}
             key={project.id}
-            className="group flex flex-col bg-slate-900 border border-white/10 rounded-2xl overflow-hidden hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(99,102,241,0.1)] transition-all duration-300"
+            className="group flex flex-col bg-[#161616] border border-[#2a2a2a] rounded-2xl overflow-hidden hover:border-[#e8c547]/60 hover:shadow-[0_0_20px_rgba(232,197,71,0.1)] transition-all duration-300"
           >
-            <div className="h-48 bg-slate-800 relative p-6 flex flex-col justify-end overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent z-10" />
-              <div className="absolute inset-0 opacity-20 group-hover:scale-105 group-hover:opacity-30 transition-all duration-500 bg-gradient-to-tr from-indigo-500 to-fuchsia-600" />
+            <div className="h-44 bg-[#1f1f1f] relative p-6 flex flex-col justify-end overflow-hidden border-b border-[#2a2a2a]">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#161616] via-[#161616]/60 to-transparent z-10" />
               <div className="relative z-20">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-white/10 text-white backdrop-blur-md border border-white/10">
+                  <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-[#0d0d0d] text-[#e8c547] border border-[#3a3a3a]">
                     {project.difficultyLevel}
                   </span>
-                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-white/10 text-slate-300 backdrop-blur-md border border-white/10">
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-[#0d0d0d] text-[#888888] border border-[#3a3a3a]">
                     <Clock className="w-3 h-3" /> {project.estimatedTime}
                   </span>
                 </div>
-                <h2 className="text-2xl font-bold text-white group-hover:text-indigo-300 transition-colors">{project.title}</h2>
+                <h2 className="text-xl font-bold text-[#f0ede6] group-hover:text-[#e8c547] transition-colors">{project.title}</h2>
               </div>
             </div>
 
             <div className="p-6 flex flex-col flex-grow">
-              <p className="text-slate-400 text-sm mb-6 flex-grow">{project.description}</p>
+              <p className="text-[#888888] text-sm mb-6 flex-grow leading-relaxed">{project.description}</p>
               <div className="mt-auto">
-                <div className="flex items-end justify-between mb-2">
-                  <span className="text-sm font-medium text-slate-300">Match Readiness</span>
-                  <span className={`text-lg font-bold ${project.matchPercentage === 100 ? 'text-green-400' : 'text-indigo-400'}`}>
+                <div className="flex items-end justify-between mb-2 font-mono text-xs">
+                  <span className="text-[#888888]">Match Readiness</span>
+                  <span className={`font-bold text-sm ${project.matchPercentage === 100 ? 'text-[#5dbf87]' : 'text-[#e8c547]'}`}>
                     {project.matchPercentage}%
                   </span>
                 </div>
-                <div className="w-full bg-slate-800 rounded-full h-2 mb-4 overflow-hidden">
+                <div className="w-full bg-[#1f1f1f] rounded-full h-2 mb-4 overflow-hidden border border-[#2a2a2a]">
                   <div
-                    className={`h-2 rounded-full transition-all duration-1000 ${project.matchPercentage === 100 ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-indigo-500'}`}
+                    className={`h-2 rounded-full transition-all duration-1000 ${
+                      project.matchPercentage === 100 ? 'bg-[#5dbf87]' : 'bg-[#e8c547]'
+                    }`}
                     style={{ width: `${project.matchPercentage}%` }}
                   />
                 </div>
 
                 {project.matchPercentage === 100 ? (
-                  <div className="flex items-center gap-2 text-sm text-green-400 font-medium bg-green-500/10 p-3 rounded-lg border border-green-500/20">
-                    <CheckCircle2 className="w-5 h-5" /> You have all required parts!
+                  <div className="flex items-center gap-2 text-xs font-mono text-[#5dbf87] bg-[#4a9b6f]/10 p-3 rounded-lg border border-[#4a9b6f]/20">
+                    <CheckCircle2 className="w-4 h-4" /> Ready to build! All parts owned.
                   </div>
                 ) : (
-                  <div className="bg-slate-800/50 p-3 rounded-lg border border-white/5">
-                    <p className="text-xs text-slate-400 font-medium mb-2 flex items-center gap-1">
+                  <div className="bg-[#0d0d0d] p-3 rounded-lg border border-[#2a2a2a]">
+                    <p className="text-xs font-mono text-[#888888] mb-2 flex items-center gap-1">
                       <CircleDashed className="w-3 h-3" /> Missing {project.missingParts.length} parts required:
                     </p>
                     <ul className="space-y-1">
                       {project.missingParts.slice(0, 3).map((part, i) => (
-                        <li key={i} className="text-xs text-rose-400/90 flex justify-between">
+                        <li key={i} className="text-xs font-mono text-[#e06b35] flex justify-between">
                           <span>{part.name}</span>
                           <span>{part.has} / {part.needed}</span>
                         </li>
                       ))}
                       {project.missingParts.length > 3 && (
-                        <li className="text-xs text-slate-500 pt-1">+ {project.missingParts.length - 3} more</li>
+                        <li className="text-xs font-mono text-[#888888] pt-1">+ {project.missingParts.length - 3} more</li>
                       )}
                     </ul>
                   </div>
@@ -277,8 +268,8 @@ export default function DiscoveryPage() {
         ))}
       </div>
 
-      {/* ── CHATBOT (fixed bottom-right, only visible after AI Auto-Invent) ── */}
-      <ChatBot aiProject={aiProject} visible={!!aiProject} />
+      {/* Floating ChatBot Assistant */}
+      <ChatBot aiProject={aiProject} visible={true} />
 
     </main>
   );
