@@ -10,7 +10,7 @@ import { Cpu, Plus, Minus, ArrowRight, Trash2, Search, Sparkles, Check, PackageC
 export default function InventoryPage() {
   const { inventory, addToInventory, removeFromInventory, getQuantity, clearInventory } = useInventory();
 
-  const [components, setComponents] = useState<any[]>([]);
+  const [baseComponents, setBaseComponents] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -25,12 +25,12 @@ export default function InventoryPage() {
       try {
         const { data, error } = await supabase.from('components').select('*');
         if (error || !data || data.length === 0) {
-          setComponents(MOCK_COMPONENTS);
+          setBaseComponents(MOCK_COMPONENTS);
         } else {
-          setComponents(data);
+          setBaseComponents(data);
         }
       } catch (err) {
-        setComponents(MOCK_COMPONENTS);
+        setBaseComponents(MOCK_COMPONENTS);
       }
     };
 
@@ -40,21 +40,37 @@ export default function InventoryPage() {
   const handleAddCustomPart = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customName.trim()) return;
-    const newPart = {
-      id: `custom_${Date.now()}`,
-      name: customName,
+
+    addToInventory(`custom_${Date.now()}`, 1,{
+      name: customName.trim(),
       category: customCategory,
-      description: customDesc || 'User added workshop hardware component.',
-      imageUrl: '/arduino.png'
-    };
-    setComponents(prev => [newPart, ...prev]);
-    addToInventory(newPart.id, 1);
+      description: customDesc.trim() || 'User added workshop hardware component.',
+    });
+
     setCustomName('');
     setCustomDesc('');
     setShowAddModal(false);
   };
 
-  const categories = ['all', 'Microcontrollers', 'Sensors', 'Displays', 'Actuators', 'Basics'];
+  const customComponents= useMemo(
+    () => 
+      inventory
+        .filter(item => item.componentId.startsWith('custom_'))
+        .map(item => ({
+          id: item.componentId,
+          name: item.name || 'Custom part',
+          category: item.category || 'Basics',
+          description: item.description || 'User added workshop hardware component.',
+        })),
+    [inventory]
+  );
+
+  const components= useMemo(
+    () => [...customComponents, ...baseComponents],
+    [customComponents, baseComponents]
+  );
+  
+  const categories = ['all', 'Microcontrollers', 'Sensors', 'Displays', 'Actuators', 'Basics', 'Materials'];
 
   const filteredComponents = useMemo(() => {
     return components.filter((item) => {
@@ -212,7 +228,7 @@ export default function InventoryPage() {
                 const comp = components.find(c => String(c.id) === String(item.componentId));
                 return (
                   <span key={item.componentId} className="font-mono text-xs px-3 py-1.5 rounded-md border border-[#5dbf87]/30 text-[#5dbf87] bg-[#4a9b6f]/10">
-                    {comp?.name || `Part #${item.componentId}`} ✓ ({item.quantity})
+                    {item.name ||comp?.name || `Part #${item.componentId}`} ✓ ({item.quantity})
                   </span>
                 );
               })

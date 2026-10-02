@@ -13,6 +13,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [glowIdx, setGlowIdx] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [infoMsg, setInfoMsg] = useState('');
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -32,34 +35,80 @@ export default function LoginPage() {
     };
   }, [router]);
 
+  const switchMode= (signUp: boolean) => {
+    setIsSignUp(signUp);
+    setErrorMsg('');
+    setInfoMsg('');
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!email || !password || loading) return;
 
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { username } }
-      });
-      if (error) alert(error.message);
-      else router.push('/discovery');
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      if (error) alert(error.message);
-      else router.push('/discovery');
+    setLoading(true);
+    setErrorMsg('');
+    setInfoMsg('');
+
+    try{
+      if (isSignUp) {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { username } }
+        });
+        if (error) {
+          setErrorMsg(error.message);
+          return;
+        }
+
+        if (data.user && data.user.identities?.length === 0) {
+          setErrorMsg('An account with this email already exists. Try signing in instead.');
+          return;
+        }
+
+        if (data.session){
+          router.push('/discovery');
+        } else{
+          setInfoMsg('Account created! Check your email for a confirmation link, then sign in.');
+        }
+      } else{
+        const {error}= await supabase.auth.signInWithPassword({email, password});
+        if (error) {
+          setErrorMsg(error.message);
+          return;
+        }
+        router.push('/discovery');
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Network error. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
+    
 
   const handleGoogleSignIn = async () => {
-    await supabase.auth.signInWithOAuth({
+    setErrorMsg('');
+    setInfoMsg('');
+    const { error }= await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/discovery` }
+      options: {redirectTo: `${window.location.origin}/discovery`}
     });
+    if (error) setErrorMsg(error.message);
   };
+
+   const messageBlock = (errorMsg || infoMsg) && (
+    <div
+      role="alert"
+      className={`text-xs rounded-lg px-4 py-3 border ${
+        errorMsg
+          ? 'border-[#e06b35]/40 bg-[#e06b35]/10 text-[#e06b35]'
+          : 'border-[#5dbf87]/40 bg-[#5dbf87]/10 text-[#5dbf87]'
+      }`}
+    >
+      {errorMsg || infoMsg}
+    </div>
+  );
 
   return (
     <div className="min-h-[calc(100vh-60px)] grid grid-cols-1 md:grid-cols-2 bg-[#0d0d0d] text-[#f0ede6] font-grotesk">
@@ -101,11 +150,13 @@ export default function LoginPage() {
                 />
               </div>
 
+              {messageBlock}
               <button
                 type="submit"
-                className="w-full py-3 bg-[#e8c547] hover:bg-[#c4a332] text-[#0d0d0d] font-bold rounded-lg transition-all text-sm mt-2 shadow-[0_0_15px_rgba(232,197,71,0.2)]"
+                disabled={loading}
+                className="w-full py-3 bg-[#e8c547] hover:bg-[#c4a332] text-[#0d0d0d] font-bold rounded-lg transition-all text-sm mt-2 shadow-[0_0_15px_rgba(232,197,71,0.2)] disabled:opacity-50"
               >
-                Sign In
+                {loading ? 'Signing in...' : 'Sign In'}
               </button>
             </form>
 
@@ -130,7 +181,7 @@ export default function LoginPage() {
 
             <p className="text-center text-xs text-[#888888] mt-6">
               No account?{' '}
-              <button onClick={() => setIsSignUp(true)} className="text-[#e8c547] underline hover:text-[#c4a332]">
+              <button onClick={() => switchMode(true)} className="text-[#e8c547] underline hover:text-[#c4a332]">
                 Create one free
               </button>
             </p>
@@ -177,17 +228,19 @@ export default function LoginPage() {
                 />
               </div>
 
+              {messageBlock}
               <button
                 type="submit"
-                className="w-full py-3 bg-[#e8c547] hover:bg-[#c4a332] text-[#0d0d0d] font-bold rounded-lg transition-all text-sm mt-2 shadow-[0_0_15px_rgba(232,197,71,0.2)]"
+                disabled={loading}
+                className="w-full py-3 bg-[#e8c547] hover:bg-[#c4a332] text-[#0d0d0d] font-bold rounded-lg transition-all text-sm mt-2 shadow-[0_0_15px_rgba(232,197,71,0.2)] disabled:opacity-50"
               >
-                Create Account
+                {loading ? 'Creating account...' : 'Create Account'}
               </button>
             </form>
 
             <p className="text-center text-xs text-[#888888] mt-6">
               Already have one?{' '}
-              <button onClick={() => setIsSignUp(false)} className="text-[#e8c547] underline hover:text-[#c4a332]">
+              <button onClick={() => switchMode(false)} className="text-[#e8c547] underline hover:text-[#c4a332]">
                 Sign in
               </button>
             </p>

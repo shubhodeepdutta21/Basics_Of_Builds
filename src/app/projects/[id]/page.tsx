@@ -7,6 +7,7 @@ import { useInventory } from '@/lib/InventoryContext';
 import { MOCK_PROJECTS, MOCK_COMPONENTS } from '@/lib/mockData';
 import { ArrowLeft, Check, X, Clock, Layers, Flame } from 'lucide-react';
 import ChatBot from '@/app/components/chatbot';
+import { computeMatch } from '@/lib/matching';
 
 export default function ProjectPage() {
   const { id } = useParams();
@@ -46,6 +47,10 @@ export default function ProjectPage() {
       isOptional: req.isOptional
     };
   });
+
+  const nameOf = (id: string) =>
+    MOCK_COMPONENTS.find(c => String(c.id) === id)?.name ?? 'Unknown Item';
+  const { statuses }= computeMatch(project.requirements, getQuantity, nameOf);
 
   const projectContext = {
     id: project.id,
@@ -99,42 +104,42 @@ export default function ProjectPage() {
                 <th className="px-6 py-4 font-normal">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#2a2a2a]">
-              {project.requirements.map((req, idx) => {
-                const comp = MOCK_COMPONENTS.find(c => String(c.id) === String(req.componentId));
-                const userQty = getQuantity(String(req.componentId));
-                const isSufficient = userQty >= req.requiredQuantity;
-
-                return (
-                  <tr key={idx} className={isSufficient ? 'bg-[#161616]' : 'bg-[#e06b35]/5'}>
-                    <td className="px-6 py-4 font-medium text-[#f0ede6]">
-                      {comp?.name || 'Unknown Item'}
-                      {req.isOptional && (
-                        <span className="ml-2 font-mono text-[10px] bg-[#1f1f1f] text-[#888888] px-2 py-0.5 rounded border border-[#3a3a3a]">
-                          Optional
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs text-[#888888]">{req.requiredQuantity}</td>
-                    <td className="px-6 py-4 font-mono text-xs">
-                      <span className={userQty > 0 ? "text-[#e8c547] font-bold" : "text-[#888888]"}>
-                        {userQty}
+                        <tbody className="divide-y divide-[#2a2a2a]">
+              {statuses.map((s, idx) => (
+                <tr
+                  key={idx}
+                  // Only a missing REQUIRED part gets the red tint
+                  className={s.isSufficient || s.isOptional ? 'bg-[#161616]' : 'bg-[#e06b35]/5'}
+                >
+                  <td className="px-6 py-4 font-medium text-[#f0ede6]">
+                    {s.name}
+                    {s.isOptional && (
+                      <span className="ml-2 font-mono text-[10px] bg-[#1f1f1f] text-[#888888] px-2 py-0.5 rounded border border-[#3a3a3a]">
+                        Optional
                       </span>
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs">
-                      {isSufficient ? (
-                        <span className="flex items-center gap-1.5 text-[#5dbf87] font-semibold">
-                          <Check className="w-4 h-4" /> Ready
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5 text-[#e06b35] font-semibold">
-                          <X className="w-4 h-4" /> Missing {req.requiredQuantity - userQty}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+                    )}
+                  </td>
+                  <td className="px-6 py-4 font-mono text-xs text-[#888888]">{s.requiredQuantity}</td>
+                  <td className="px-6 py-4 font-mono text-xs">
+                    <span className={s.has > 0 ? "text-[#e8c547] font-bold" : "text-[#888888]"}>
+                      {s.has}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 font-mono text-xs">
+                    {s.isSufficient ? (
+                      <span className="flex items-center gap-1.5 text-[#5dbf87] font-semibold">
+                        <Check className="w-4 h-4" /> Ready
+                      </span>
+                    ) : s.isOptional ? (
+                      <span className="text-[#888888]">Optional · not owned</span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-[#e06b35] font-semibold">
+                        <X className="w-4 h-4" /> Missing {s.missing}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

@@ -45,7 +45,7 @@ export default function Navbar() {
           BOB
         </span>
         <span className="font-mono text-[10px] text-[#888888] tracking-wider mt-0.5">
-          BUILD OUT OF BROKEN
+          BASICS OF BUILDS
         </span>
       </Link>
 

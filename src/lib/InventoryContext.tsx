@@ -2,10 +2,16 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+export type ComponentMeta= {
+  name?: string;
+  category?: string;
+  description?: string;
+};
+
 export type InventoryItem = {
   componentId: string;
   quantity: number;
-};
+} & ComponentMeta;
 
 export type AIProject = {
   id?: string;
@@ -19,7 +25,7 @@ export type AIProject = {
 
 type InventoryContextType = {
   inventory: InventoryItem[];
-  addToInventory: (componentId: string, quantity?: number) => void;
+  addToInventory: (componentId: string, quantity?: number, meta?: ComponentMeta) => void;
   removeFromInventory: (componentId: string) => void;
   clearInventory: () => void;
   getQuantity: (componentId: string) => number;
@@ -33,6 +39,7 @@ const InventoryContext = createContext<InventoryContextType | undefined>(undefin
 export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [aiProject, setAiProjectState] = useState<AIProject>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   // Load inventory & persistent aiProject from local storage on mount
   useEffect(() => {
@@ -53,13 +60,14 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         console.error("Failed to parse AI project from storage", e);
       }
     }
+    setHydrated(true);
   }, []);
 
   // Save inventory to local storage on change
   useEffect(() => {
+    if (!hydrated) return;
     localStorage.setItem('bob_inventory', JSON.stringify(inventory));
-    localStorage.setItem('hackhorizon_inventory', JSON.stringify(inventory));
-  }, [inventory]);
+  }, [inventory, hydrated]);
 
   // Save AI project to local storage on change
   const setAiProject = (project: AIProject) => {
@@ -76,17 +84,20 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('bob_ai_project');
   };
 
-  const addToInventory = (componentId: string, quantity: number = 1) => {
+  const addToInventory = (componentId: string, quantity: number = 1, meta?: ComponentMeta) => {
     setInventory(prev => {
       const existing = prev.find(item => item.componentId === componentId);
       if (existing) {
+        const newQty= existing.quantity + quantity;
+        if (newQty <= 0) return prev.filter(item => item.componentId != componentId);
         return prev.map(item => 
           item.componentId === componentId 
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: newQty}
             : item
         );
       }
-      return [...prev, { componentId, quantity }];
+      if (quantity <= 0) return prev;
+      return [...prev, { componentId, quantity, ...meta }];
     });
   };
 

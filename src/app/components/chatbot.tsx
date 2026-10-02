@@ -91,6 +91,7 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
     const [isTyping, setIsTyping] = useState(false);
     const [hasBeenOpened, setHasBeenOpened] = useState(false);
     const [showPulse, setShowPulse] = useState(false);
+    const [ loadedKey, setLoadedKey ] = useState("");
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -101,21 +102,75 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isTyping]);
 
-    // When an active project is set, pulse the button and auto-add greeting
+        // A primitive string that changes ONLY when the project's content changes.
+    // Strings compare by value, so a new-but-identical object does not trigger the effect.
+    const projectKey = activeProject
+        ? `${activeProject.id ?? ""}|${activeProject.title}|${activeProject.description}`
+        : "";
+    const projectTitle = activeProject?.title;
+
+    // One localStorage entry per project, so each project keeps its own conversation
+    const storageKey = activeProject
+        ? `bob_chat_${activeProject.id ?? activeProject.title}`
+        : "";
+
+    // LOAD: when the project changes (or on first mount), restore its saved chat.
+    // Only if nothing valid is saved do we start fresh with the greeting.
     useEffect(() => {
-        if (!activeProject) return;
-        setShowPulse(true);
-        setMessages([
-            {
-                id: "welcome",
-                role: "assistant",
-                content: `I'm ready to help you build **${activeProject.title}**! 🚀 Ask me anything — wiring diagrams, code snippets, component substitutions, or assembly steps.`,
-                timestamp: new Date(),
-            },
-        ]);
+        if (!storageKey) return;
+
+        let restored: Message[] = [];
+        try {
+            const raw = localStorage.getItem(storageKey);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) {
+                    // Keep only well-formed messages (guards against corrupted storage)
+                    restored = parsed.filter(
+                        (m: any) =>
+                            m &&
+                            (m.role === "user" || m.role === "assistant") &&
+                            typeof m.content === "string" &&
+                            typeof m.id === "string"
+                    );
+                }
+            }
+        } catch (e) {
+            console.error("Failed to restore chat", e);
+        }
+
+        if (restored.length > 0) {
+            // Returning to an existing conversation: restore it, no attention-grabbing pulse
+            setMessages(restored);
+        } else {
+            setShowPulse(true);
+            setMessages([
+                {
+                    id: "welcome",
+                    role: "assistant",
+                    content: `I'm ready to help you build **${projectTitle}**! 🚀 Ask me anything — wiring diagrams, code snippets, component substitutions, or assembly steps.`,
+                    timestamp: new Date(),
+                },
+            ]);
+        }
+
+        // Mark loading as finished for THIS project; the save effect may now run
+        setLoadedKey(storageKey);
+
         const t = setTimeout(() => setShowPulse(false), 6000);
         return () => clearTimeout(t);
-    }, [activeProject]);
+    }, [projectKey, projectTitle, storageKey]);
+
+    // SAVE: persist on every change, but only once loading for this project is done
+    useEffect(() => {
+        if (!storageKey || loadedKey !== storageKey) return;
+        try {
+            // Keep the most recent 50 messages so storage can't grow forever
+            localStorage.setItem(storageKey, JSON.stringify(messages.slice(-50)));
+        } catch (e) {
+            console.error("Failed to save chat", e);
+        }
+    }, [messages, storageKey, loadedKey]);
 
     // Focus input when chat opens
     useEffect(() => {

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import Cerebras from "@cerebras/cerebras_cloud_sdk";
-
-const cerebras= new Cerebras({
-    apiKey: process.env.CEREBRAS_API_KEY,
-});
+import Groq from "groq-sdk";
 
 export async function POST(request: Request) {
+    if (!process.env.GROQ_API_KEY) {
+        return NextResponse.json({ error: "GROQ_API_KEY is not set" }, { status: 500 });
+    }
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
     try {
         const body = await request.json();
         const {
@@ -70,19 +71,23 @@ If the user asks questions completely unrelated to DIY hardware or this project,
             { role: "user" as const, content: user_question }
         ];
 
-        const completion = await cerebras.chat.completions.create({
-            model: "gpt-oss-120b",
+        const completion = (await groq.chat.completions.create({
+            model: "openai/gpt-oss-120b",
             messages: messages,
             temperature: 0.3,
-            max_tokens: 800,
-        }) as any;
+            max_completion_tokens: 1500,
+            reasoning_effort: "low",
+        } as any)) as any;
 
-        return NextResponse.json({
-            reply: completion.choices[0].message.content
-        });
+        const reply = completion.choices?.[0]?.message?.content ?? "";
+        if (!reply.trim()) {
+            return NextResponse.json({ error: "AI returned an empty response. Please try again." }, { status: 502 });
+        }
+
+        return NextResponse.json({ reply });
 
     } catch (error: any) {
-        console.error("Native Cerebras SDK Endpoint Error: ", error);
+        console.error("Groq chatbot error: ", error);
         return NextResponse.json(
             { error: `Inference breakdown: ${error.message || "Unknown error"}` },
             { status: 500 }

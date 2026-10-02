@@ -4,15 +4,17 @@ import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useInventory } from '@/lib/InventoryContext';
 import { MOCK_PROJECTS, MOCK_COMPONENTS } from '@/lib/mockData';
-import { CheckCircle2, CircleDashed, Clock, Sparkles, Loader2, Bot, ArrowRight, Trash2 } from 'lucide-react';
+import { CheckCircle2, CircleDashed, Clock, Sparkles, Loader2, Bot, ArrowRight, Trash2, AlertTriangle, X} from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import ChatBot from '../components/chatbot';
+import { computeMatch } from '@/lib/matching';
 
 export default function DiscoveryPage() {
   const { inventory, getQuantity, aiProject, setAiProject, clearAiProject } = useInventory();
   const [user, setUser] = useState<any>(null);
   const [dbComponents, setDbComponents] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [ generateError, setGenerateError ] = useState<string | null>(null);
 
   useEffect(() => {
     const getSession = async () => {
@@ -47,12 +49,13 @@ export default function DiscoveryPage() {
   }, [dbComponents]);
 
   const generateMagicProject = async () => {
-    if (inventory.length === 0) return;
+    if (inventory.length === 0 || isGenerating) return;
     setIsGenerating(true);
+    setGenerateError(null);
     try {
       const componentNames = inventory.map(item => {
         const comp = allComponents.find(c => String(c.id) === String(item.componentId));
-        const name = comp?.name || `Component #${item.componentId}`;
+        const name = item.name || comp?.name || `Component #${item.componentId}`;
         const qty = item.quantity > 1 ? `${item.quantity}x ` : '';
         return `${qty}${name}`;
       });
@@ -63,47 +66,39 @@ export default function DiscoveryPage() {
         body: JSON.stringify({ componentNames, inventory }),
       });
 
-      const data = await response.json();
-      if (data.project) {
-        setAiProject(data.project);
+      const data= await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error || `Request failed (${response.status})`);
       }
-    } catch (error) {
+      if (!data?.project?.title) {
+        throw new Error("The AI returned an unusable project. Please try again.");
+      }
+      
+      setAiProject(data.project);
+    } catch (error: any) {
       console.error("Error generating project:", error);
+      setGenerateError(
+        error instanceof TypeError
+          ? "Couldn't reach the server. Check your connection and try again."
+          : error?.message || "Something went wrong. Please try again."
+      );
     } finally {
       setIsGenerating(false);
     }
   };
 
   const recommendedProjects = useMemo(() => {
+    const nameOf = (id: string) =>
+      allComponents.find(c => String(c.id) === id)?.name ?? 'Unknown Item';
+
     return MOCK_PROJECTS.map(project => {
-      let matchedItems = 0;
-      let totalRequired = 0;
-      const missingParts: { name: string, needed: number, has: number }[] = [];
-
-      project.requirements.forEach(req => {
-        if (!req.isOptional) {
-          totalRequired += 1;
-          const userQty = getQuantity(String(req.componentId));
-          if (userQty >= req.requiredQuantity) {
-            matchedItems += 1;
-          } else {
-            const compDef = allComponents.find(c => String(c.id) === String(req.componentId));
-            missingParts.push({
-              name: compDef?.name || 'Unknown Item',
-              needed: req.requiredQuantity,
-              has: userQty
-            });
-          }
-        }
-      });
-
-      const matchPercentage = totalRequired === 0 ? 100 : Math.round((matchedItems / totalRequired) * 100);
-
-      return {
-        ...project,
-        matchPercentage,
-        missingParts
-      };
+      const { matchPercentage, missingParts } = computeMatch(
+        project.requirements,
+        getQuantity,
+        nameOf
+      );
+      return { ...project, matchPercentage, missingParts };
     }).sort((a, b) => b.matchPercentage - a.matchPercentage);
   }, [getQuantity, allComponents]);
 
@@ -136,6 +131,23 @@ export default function DiscoveryPage() {
           </Link>
         </div>
       </div>
+
+      {generateError && (
+        <div
+          role="alert"
+          className="mb-6 flex items-start gap-3 rounded-xl border border-[#e06b35]/40 bg-[#e06b35]/10 px-4 py-3 text-sm"
+        >
+          <AlertTriangle className="w-4 h-4 text-[#e06b35] mt-0.5 flex-shrink-0" />
+          <p className="flex-1 text-[#f0ede6]">{generateError}</p>
+          <button
+            onClick={() => setGenerateError(null)}
+            aria-label="Dismiss error"
+            className="text-[#888888] hover:text-[#f0ede6] transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {inventory.length === 0 && (
         <div className="bg-[#161616] border border-[#e8c547]/30 rounded-xl p-8 text-center mb-8">

@@ -232,7 +232,7 @@ export default function Home() {
           <Link href="/login" className="hover:text-[#f0ede6] transition-colors">Sign In</Link>
         </div>
         <div className="font-mono text-xs text-[#888888]">
-          © 2026 BOB · Build Out of Broken
+          © 2026 BOB · Basics Of Builds
         </div>
       </footer>
 
