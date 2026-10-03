@@ -78,7 +78,7 @@ export default function Navbar() {
               {user.email}
             </span>
             <button
-              onClick={handleSignOut}
+              onClick={() => {if (window.confirm('Do you want to SignOut?')) handleSignOut();}}
               className="px-3 py-1.5 text-xs font-mono border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 rounded-md transition-colors flex items-center gap-1.5"
             >
               <LogOut className="w-3.5 h-3.5" /> Sign Out

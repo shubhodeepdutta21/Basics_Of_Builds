@@ -9,9 +9,10 @@ import { computeMatch } from '@/lib/matching';
 import { authFetch } from '@/lib/authFetch';
 import { useCatalog } from '@/lib/CatalogContext';
 import CatalogStatus from '../components/CatalogStatus';
+import InventoryGate from '../components/InventoryGate';
 
 export default function DiscoveryPage() {
-  const { inventory, getQuantity, aiProject, setAiProject, clearAiProject } = useInventory();
+  const { inventory, getQuantity, aiProject, setAiProject, clearAiProject, inventoryStatus } = useInventory();
   const catalog = useCatalog();
   const [isGenerating, setIsGenerating] = useState(false);
   const [ generateError, setGenerateError ] = useState<string | null>(null);
@@ -69,6 +70,7 @@ export default function DiscoveryPage() {
      }, [catalog.projects, catalog.nameOf, getQuantity]);
 
   if (catalog.status !== 'ready') return <CatalogStatus />;
+  if (inventoryStatus === 'loading') return <InventoryGate />;
 
   return (
     <main className="min-h-screen flex flex-col bg-[#0d0d0d] text-[#f0ede6] font-grotesk pt-6 px-4 md:px-8 max-w-6xl mx-auto w-full pb-20">

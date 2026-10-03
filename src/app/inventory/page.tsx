@@ -6,9 +6,10 @@ import { useInventory } from '@/lib/InventoryContext';
 import { Cpu, Plus, Minus, ArrowRight, Trash2, Search, Sparkles } from 'lucide-react';
 import { useCatalog } from '@/lib/CatalogContext';
 import CatalogStatus from '../components/CatalogStatus';
+import InventoryGate from '../components/InventoryGate';
 
 export default function InventoryPage() {
-  const { inventory, addToInventory, removeFromInventory, getQuantity, clearInventory } = useInventory();
+  const { inventory, addToInventory, removeFromInventory, getQuantity, clearInventory, inventoryStatus, syncError, clearSyncError } = useInventory();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -24,7 +25,7 @@ export default function InventoryPage() {
     e.preventDefault();
     if (!customName.trim()) return;
 
-    addToInventory(`custom_${Date.now()}`, 1,{
+    addToInventory(`custom_${crypto.randomUUID()}`, 1,{
       name: customName.trim(),
       category: customCategory,
       description: customDesc.trim() || 'User added workshop hardware component.',
@@ -68,9 +69,19 @@ export default function InventoryPage() {
   }, [components, searchQuery, selectedCategory]);
 
   if (catalog.status !== 'ready') return <CatalogStatus />;
+  if (inventoryStatus !== 'ready') return <InventoryGate />;
   
   return (
     <main className="min-h-screen flex flex-col bg-[#0d0d0d] text-[#f0ede6] font-grotesk pt-6 px-4 md:px-8 max-w-6xl mx-auto w-full pb-20">
+
+      {syncError && (
+           <div role="alert" className="mb-6 flex items-start gap-3 rounded-xl border border-[#e06b35]/40 bg-[#e06b35]/10 px-4 py-3 text-sm">
+             <p className="flex-1 text-[#f0ede6]">{syncError}</p>
+             <button onClick={clearSyncError} className="text-[#888888] hover:text-[#f0ede6] font-mono text-xs">
+               Dismiss
+             </button>
+           </div>
+         )}
       
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-8 pb-6 border-b border-[#2a2a2a] gap-4">
@@ -86,7 +97,7 @@ export default function InventoryPage() {
             <Plus className="w-4 h-4" /> Add Custom Part
           </button>
           <button
-            onClick={clearInventory}
+            onClick={() => {if (window.confirm('Remove every part from your inventory?')) clearInventory();}}
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono text-rose-400 hover:bg-rose-950/30 rounded-lg transition-colors border border-[#2a2a2a] hover:border-rose-900/50"
           >
             <Trash2 className="w-3.5 h-3.5" /> Clear All
