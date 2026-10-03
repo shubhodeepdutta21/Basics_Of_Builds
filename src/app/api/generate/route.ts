@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Groq from "groq-sdk";
-import { parse } from "path";
+import { requireUser } from "@/lib/serverAuth";
+import { checkRateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 type Difficulty= "Beginner" | "Intermediate" | "Advanced";
 
@@ -83,6 +84,12 @@ function validateProject(
 
 export async function POST(request: Request) {
 
+    const auth = await requireUser(request);
+    if (!auth.ok) return auth.response;
+
+    const limited = await checkRateLimit(`generate:${auth.user.id}`, 5, 60_000); 
+    if (!limited.ok) return tooManyRequests(limited.retryAfterSec);
+
     if (!process.env.GROQ_API_KEY) {
         return NextResponse.json(
             { error: "GROQ_API_KEY is not set" },
@@ -117,6 +124,11 @@ export async function POST(request: Request) {
                 return String(item);
             });
         }
+
+        partsList = partsList
+            .slice(0, 60)
+            .map((p) => p.replace(/\s+/g, " ").trim().slice(0, 80))
+            .filter(Boolean);
 
         if (partsList.length === 0) {
             return NextResponse.json({ error: "No inventory provided. Please add parts to your inventory first." }, { status: 400 });

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Bot, X, Send, Sparkles, ChevronDown, Loader2, RotateCcw } from "lucide-react";
+import { authFetch } from "@/lib/authFetch";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Message {
@@ -226,7 +227,7 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
                     content: m.content,
                 }));
 
-            const response = await fetch("/api/chatbot", {
+            const response = await authFetch("/api/chatbot", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -243,11 +244,11 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
                 }),
             });
 
+            const data = await response.json().catch(() => null);
             if (!response.ok) {
-                throw new Error(`Server returned status code: ${response.status}`);
+                throw new Error(data?.error || `Server returned status code: ${response.status}`);
             }
 
-            const data = await response.json();
             const replyText = data?.reply || "Sorry, I couldn't generate a troubleshooting step. Please try again.";
 
             setMessages((prev) => [
@@ -266,7 +267,10 @@ export default function ChatBot({ aiProject, project, visible = true }: ChatBotP
                 {
                     id: (Date.now() + 1).toString(),
                     role: "assistant",
-                    content: "Connection error — failed to reach the BOB routing engine. Please try again.",
+                     content:
+                           err instanceof TypeError
+                               ? "Connection error — failed to reach the BOB routing engine. Please try again."
+                               : (err as Error)?.message || "Something went wrong. Please try again.",
                     timestamp: new Date(),
                 },
             ]);

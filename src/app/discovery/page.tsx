@@ -8,6 +8,7 @@ import { CheckCircle2, CircleDashed, Clock, Sparkles, Loader2, Bot, ArrowRight, 
 import { supabase } from '@/lib/supabaseClient';
 import ChatBot from '../components/chatbot';
 import { computeMatch } from '@/lib/matching';
+import { authFetch } from '@/lib/authFetch';
 
 export default function DiscoveryPage() {
   const { inventory, getQuantity, aiProject, setAiProject, clearAiProject } = useInventory();
@@ -60,7 +61,7 @@ export default function DiscoveryPage() {
         return `${qty}${name}`;
       });
 
-      const response = await fetch("/api/generate", {
+      const response = await authFetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ componentNames, inventory }),
