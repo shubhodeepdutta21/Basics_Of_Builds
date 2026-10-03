@@ -1,42 +1,24 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useInventory } from '@/lib/InventoryContext';
-import { MOCK_COMPONENTS } from '@/lib/mockData';
-import { supabase } from '@/lib/supabaseClient';
 import { Cpu, Plus, Minus, ArrowRight, Trash2, Search, Sparkles } from 'lucide-react';
-import { CatalogComponent } from '@/lib/types';
+import { useCatalog } from '@/lib/CatalogContext';
+import CatalogStatus from '../components/CatalogStatus';
 
 export default function InventoryPage() {
   const { inventory, addToInventory, removeFromInventory, getQuantity, clearInventory } = useInventory();
 
-  const [baseComponents, setBaseComponents] = useState<CatalogComponent[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const catalog = useCatalog();
 
   // Custom component form state for "+ Add Part"
   const [customName, setCustomName] = useState('');
   const [customCategory, setCustomCategory] = useState('Microcontrollers');
   const [customDesc, setCustomDesc] = useState('');
-
-  useEffect(() => {
-    const fetchComponents = async () => {
-      try {
-        const { data, error } = await supabase.from('components').select('*');
-        if (error || !data || data.length === 0) {
-          setBaseComponents(MOCK_COMPONENTS);
-        } else {
-          setBaseComponents(data);
-        }
-      } catch {
-        setBaseComponents(MOCK_COMPONENTS);
-      }
-    };
-
-    fetchComponents();
-  }, []);
 
   const handleAddCustomPart = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,12 +48,15 @@ export default function InventoryPage() {
     [inventory]
   );
 
-  const components= useMemo(
-    () => [...customComponents, ...baseComponents],
-    [customComponents, baseComponents]
-  );
+  const components = useMemo(
+       () => [...customComponents, ...catalog.components],
+       [customComponents, catalog.components]
+     );
   
-  const categories = ['all', 'Microcontrollers', 'Sensors', 'Displays', 'Actuators', 'Basics', 'Materials'];
+  const categories = useMemo(
+       () => ['all', ...Array.from(new Set(components.map(c => c.category))).sort()],
+       [components]
+     );
 
   const filteredComponents = useMemo(() => {
     return components.filter((item) => {
@@ -82,6 +67,8 @@ export default function InventoryPage() {
     });
   }, [components, searchQuery, selectedCategory]);
 
+  if (catalog.status !== 'ready') return <CatalogStatus />;
+  
   return (
     <main className="min-h-screen flex flex-col bg-[#0d0d0d] text-[#f0ede6] font-grotesk pt-6 px-4 md:px-8 max-w-6xl mx-auto w-full pb-20">
       

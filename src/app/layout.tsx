@@ -3,6 +3,7 @@ import { Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { InventoryProvider } from "@/lib/InventoryContext";
 import Navbar from "@/app/components/Navbar";
+import { CatalogProvider } from "@/lib/CatalogContext";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -33,10 +34,12 @@ export default function RootLayout({
         className={`${spaceGrotesk.variable} ${spaceMono.variable} min-h-full flex flex-col bg-[#0d0d0d] text-[#f0ede6] selection:bg-[#e8c547]/30 font-grotesk`}
       >
         <InventoryProvider>
-          <Navbar />
-          <div className="grow pt-15">
-            {children}
-          </div>
+          <CatalogProvider>
+            <Navbar />
+            <div className="grow pt-15">
+              {children}
+            </div>
+          </CatalogProvider>
         </InventoryProvider>
       </body>
     </html>

@@ -1,39 +1,20 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useInventory } from '@/lib/InventoryContext';
-import { MOCK_PROJECTS, MOCK_COMPONENTS } from '@/lib/mockData';
 import { CheckCircle2, CircleDashed, Clock, Sparkles, Loader2, Bot, ArrowRight, Trash2, AlertTriangle, X} from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
 import ChatBot from '../components/chatbot';
 import { computeMatch } from '@/lib/matching';
 import { authFetch } from '@/lib/authFetch';
-import { CatalogComponent } from '@/lib/types';
+import { useCatalog } from '@/lib/CatalogContext';
+import CatalogStatus from '../components/CatalogStatus';
 
 export default function DiscoveryPage() {
   const { inventory, getQuantity, aiProject, setAiProject, clearAiProject } = useInventory();
-  const [dbComponents, setDbComponents] = useState<CatalogComponent[]>([]);
+  const catalog = useCatalog();
   const [isGenerating, setIsGenerating] = useState(false);
   const [ generateError, setGenerateError ] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchComponents = async () => {
-      const { data } = await supabase.from('components').select('*');
-      if (data && data.length > 0) {
-        setDbComponents(data);
-      }
-    };
-    fetchComponents();
-  }, []);
-
-  // Combine database components with static mock components
-  const allComponents = useMemo(() => {
-    const map = new Map<string, CatalogComponent>();
-    MOCK_COMPONENTS.forEach(c => map.set(String(c.id), c));
-    dbComponents.forEach(c => map.set(String(c.id), c));
-    return Array.from(map.values());
-  }, [dbComponents]);
 
   const generateMagicProject = async () => {
     if (inventory.length === 0 || isGenerating) return;
@@ -41,10 +22,9 @@ export default function DiscoveryPage() {
     setGenerateError(null);
     try {
       const componentNames = inventory.map(item => {
-        const comp = allComponents.find(c => String(c.id) === String(item.componentId));
-        const name = item.name || comp?.name || `Component #${item.componentId}`;
-        const qty = item.quantity > 1 ? `${item.quantity}x ` : '';
-        return `${qty}${name}`;
+           const name = item.name || catalog.nameOf(item.componentId);
+           const qty = item.quantity > 1 ? `${item.quantity}x ` : '';
+           return `${qty}${name}`;
       });
 
       const response = await authFetch("/api/generate", {
@@ -76,18 +56,19 @@ export default function DiscoveryPage() {
   };
 
   const recommendedProjects = useMemo(() => {
-    const nameOf = (id: string) =>
-      allComponents.find(c => String(c.id) === id)?.name ?? 'Unknown Item';
+       return catalog.projects
+         .map(project => {
+           const { matchPercentage, missingParts } = computeMatch(
+             project.requirements,
+             getQuantity,
+             catalog.nameOf
+           );
+           return { ...project, matchPercentage, missingParts };
+         })
+         .sort((a, b) => b.matchPercentage - a.matchPercentage);
+     }, [catalog.projects, catalog.nameOf, getQuantity]);
 
-    return MOCK_PROJECTS.map(project => {
-      const { matchPercentage, missingParts } = computeMatch(
-        project.requirements,
-        getQuantity,
-        nameOf
-      );
-      return { ...project, matchPercentage, missingParts };
-    }).sort((a, b) => b.matchPercentage - a.matchPercentage);
-  }, [getQuantity, allComponents]);
+  if (catalog.status !== 'ready') return <CatalogStatus />;
 
   return (
     <main className="min-h-screen flex flex-col bg-[#0d0d0d] text-[#f0ede6] font-grotesk pt-6 px-4 md:px-8 max-w-6xl mx-auto w-full pb-20">
