@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
-import { Cpu, Heart, MessageSquare, Share2, Lock, Sparkles, MapPin } from 'lucide-react';
+import { Cpu, Heart, MessageSquare, Share2, Lock } from 'lucide-react';
+import { User } from '@supabase/supabase-js';
 
 interface Post {
   id: number;
@@ -66,7 +67,7 @@ const INITIAL_POSTS: Post[] = [
 ];
 
 export default function CommunityPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>('All Posts');
   const [likedPosts, setLikedPosts] = useState<number[]>([]);

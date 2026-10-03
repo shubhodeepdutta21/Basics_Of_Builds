@@ -151,7 +151,7 @@ export default function ProjectPage() {
         <div className="space-y-4">
           {buildSteps.map((instruction, index) => (
             <div key={index} className="flex gap-4 bg-[#161616] border border-[#2a2a2a] p-6 rounded-xl">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#1f1f1f] border border-[#3a3a3a] text-[#e8c547] flex items-center justify-center font-mono font-bold text-sm">
+              <div className="shrink-0 w-8 h-8 rounded-full bg-[#1f1f1f] border border-[#3a3a3a] text-[#e8c547] flex items-center justify-center font-mono font-bold text-sm">
                 {index + 1}
               </div>
               <p className="text-[#f0ede6] text-sm pt-1 leading-relaxed">

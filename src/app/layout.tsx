@@ -34,7 +34,7 @@ export default function RootLayout({
       >
         <InventoryProvider>
           <Navbar />
-          <div className="flex-grow pt-[60px]">
+          <div className="grow pt-15">
             {children}
           </div>
         </InventoryProvider>

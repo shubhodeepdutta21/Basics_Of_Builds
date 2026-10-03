@@ -4,11 +4,12 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import { Cpu, LogOut, User } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import { User } from '@supabase/supabase-js';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const getSession = async () => {
@@ -38,7 +39,7 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-[60px] bg-[#0d0d0d]/90 backdrop-blur-md border-b border-[#2a2a2a] flex items-center justify-between px-6 transition-colors">
+    <nav className="fixed top-0 left-0 right-0 z-50 h-15 bg-[#0d0d0d]/90 backdrop-blur-md border-b border-[#2a2a2a] flex items-center justify-between px-6 transition-colors">
       {/* Logo */}
       <Link href="/" className="flex flex-col group">
         <span className="font-mono text-xl font-bold tracking-widest text-[#e8c547] group-hover:text-[#c4a332] transition-colors leading-none">
@@ -73,7 +74,7 @@ export default function Navbar() {
       <div className="flex items-center gap-3">
         {user ? (
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline-block font-mono text-xs text-[#e8c547] bg-[#161616] px-2.5 py-1 rounded border border-[#2a2a2a] truncate max-w-[160px]">
+            <span className="hidden sm:inline-block font-mono text-xs text-[#e8c547] bg-[#161616] px-2.5 py-1 rounded border border-[#2a2a2a] truncate max-w-40">
               {user.email}
             </span>
             <button

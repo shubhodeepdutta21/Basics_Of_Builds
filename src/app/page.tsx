@@ -148,7 +148,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="bg-[#161616] border border-[#2a2a2a] rounded-2xl p-8 flex flex-col items-center justify-center relative overflow-hidden aspect-[4/3]">
+        <div className="bg-[#161616] border border-[#2a2a2a] rounded-2xl p-8 flex flex-col items-center justify-center relative overflow-hidden aspect-4/3">
           <div className="w-full text-center">
             <div className="flex flex-wrap gap-2 justify-center mb-6">
               {demoParts.map((part, i) => {
@@ -170,7 +170,7 @@ export default function Home() {
 
             <div className="text-[#3a3a3a] text-xl mb-4 animate-bounce">↓</div>
 
-            <div className="bg-gradient-to-r from-[#e8c547]/15 to-[#c4a332]/10 border border-[#c4a332] rounded-lg p-4 font-mono text-sm text-[#e8c547] transition-all duration-300">
+            <div className="bg-linear-to-r from-[#e8c547]/15 to-[#c4a332]/10 border border-[#c4a332] rounded-lg p-4 font-mono text-sm text-[#e8c547] transition-all duration-300">
               {PART_DEMO_RESULTS[resultIdx]}
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function Home() {
           <p className="font-mono text-xs tracking-[3px] text-[#e06b35] uppercase mb-3">Community</p>
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-12">Makers who stopped buying new</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-[#2a2a2a] rounded-xl overflow-hidden border border-[#2a2a2a]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[#2a2a2a] rounded-xl overflow-hidden border border-[#2a2a2a]">
             {[
               { quote: '"I had three dead drones and a box of random servos. BOB turned that into a full home automation rig. Didn\'t buy a single component."', author: 'Jona K.', meta: 'Hardware tinkerer · Berlin', avatar: 'JK' },
               { quote: '"As a teacher, I use BOB to show students that creativity beats budget every time. Class builds something new from e-waste every week."', author: 'Riya M.', meta: 'STEM educator · Bangalore', avatar: 'RM' },

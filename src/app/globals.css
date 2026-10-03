@@ -101,3 +101,9 @@ body {
   background: #3a3a3a;
   border-radius: 3px;
 }
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

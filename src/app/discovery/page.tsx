@@ -9,21 +9,15 @@ import { supabase } from '@/lib/supabaseClient';
 import ChatBot from '../components/chatbot';
 import { computeMatch } from '@/lib/matching';
 import { authFetch } from '@/lib/authFetch';
+import { CatalogComponent } from '@/lib/types';
 
 export default function DiscoveryPage() {
   const { inventory, getQuantity, aiProject, setAiProject, clearAiProject } = useInventory();
-  const [user, setUser] = useState<any>(null);
-  const [dbComponents, setDbComponents] = useState<any[]>([]);
+  const [dbComponents, setDbComponents] = useState<CatalogComponent[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [ generateError, setGenerateError ] = useState<string | null>(null);
 
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-    };
-    getSession();
-
     const fetchComponents = async () => {
       const { data } = await supabase.from('components').select('*');
       if (data && data.length > 0) {
@@ -31,19 +25,11 @@ export default function DiscoveryPage() {
       }
     };
     fetchComponents();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
   }, []);
 
   // Combine database components with static mock components
   const allComponents = useMemo(() => {
-    const map = new Map<string, any>();
+    const map = new Map<string, CatalogComponent>();
     MOCK_COMPONENTS.forEach(c => map.set(String(c.id), c));
     dbComponents.forEach(c => map.set(String(c.id), c));
     return Array.from(map.values());
@@ -77,12 +63,12 @@ export default function DiscoveryPage() {
       }
       
       setAiProject(data.project);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error generating project:", error);
       setGenerateError(
         error instanceof TypeError
           ? "Couldn't reach the server. Check your connection and try again."
-          : error?.message || "Something went wrong. Please try again."
+          : error instanceof Error ? error.message : "Something went wrong. Please try again."
       );
     } finally {
       setIsGenerating(false);
@@ -138,7 +124,7 @@ export default function DiscoveryPage() {
           role="alert"
           className="mb-6 flex items-start gap-3 rounded-xl border border-[#e06b35]/40 bg-[#e06b35]/10 px-4 py-3 text-sm"
         >
-          <AlertTriangle className="w-4 h-4 text-[#e06b35] mt-0.5 flex-shrink-0" />
+          <AlertTriangle className="w-4 h-4 text-[#e06b35] mt-0.5 shrink-0" />
           <p className="flex-1 text-[#f0ede6]">{generateError}</p>
           <button
             onClick={() => setGenerateError(null)}
@@ -221,7 +207,7 @@ export default function DiscoveryPage() {
             className="group flex flex-col bg-[#161616] border border-[#2a2a2a] rounded-2xl overflow-hidden hover:border-[#e8c547]/60 hover:shadow-[0_0_20px_rgba(232,197,71,0.1)] transition-all duration-300"
           >
             <div className="h-44 bg-[#1f1f1f] relative p-6 flex flex-col justify-end overflow-hidden border-b border-[#2a2a2a]">
-              <div className="absolute inset-0 bg-gradient-to-t from-[#161616] via-[#161616]/60 to-transparent z-10" />
+              <div className="absolute inset-0 bg-linear-to-t from-[#161616] via-[#161616]/60 to-transparent z-10" />
               <div className="relative z-20">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-[#0d0d0d] text-[#e8c547] border border-[#3a3a3a]">
@@ -235,8 +221,8 @@ export default function DiscoveryPage() {
               </div>
             </div>
 
-            <div className="p-6 flex flex-col flex-grow">
-              <p className="text-[#888888] text-sm mb-6 flex-grow leading-relaxed">{project.description}</p>
+            <div className="p-6 flex flex-col grow">
+              <p className="text-[#888888] text-sm mb-6 grow leading-relaxed">{project.description}</p>
               <div className="mt-auto">
                 <div className="flex items-end justify-between mb-2 font-mono text-xs">
                   <span className="text-[#888888]">Match Readiness</span>

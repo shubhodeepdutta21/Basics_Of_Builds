@@ -79,8 +79,8 @@ export default function LoginPage() {
         }
         router.push('/discovery');
       }
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Network error. Please try again.');
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }

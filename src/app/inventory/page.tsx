@@ -4,13 +4,14 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useInventory } from '@/lib/InventoryContext';
 import { MOCK_COMPONENTS } from '@/lib/mockData';
-import { supabase } from '@/lib/db';
-import { Cpu, Plus, Minus, ArrowRight, Trash2, Search, Sparkles, Check, PackageCheck } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
+import { Cpu, Plus, Minus, ArrowRight, Trash2, Search, Sparkles } from 'lucide-react';
+import { CatalogComponent } from '@/lib/types';
 
 export default function InventoryPage() {
   const { inventory, addToInventory, removeFromInventory, getQuantity, clearInventory } = useInventory();
 
-  const [baseComponents, setBaseComponents] = useState<any[]>([]);
+  const [baseComponents, setBaseComponents] = useState<CatalogComponent[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -29,7 +30,7 @@ export default function InventoryPage() {
         } else {
           setBaseComponents(data);
         }
-      } catch (err) {
+      } catch {
         setBaseComponents(MOCK_COMPONENTS);
       }
     };
@@ -175,7 +176,7 @@ export default function InventoryPage() {
                 </span>
               </div>
 
-              <div className="flex-grow">
+              <div className="grow">
                 <h3 className="font-semibold text-[#f0ede6] text-base mb-1">{component.name}</h3>
                 <p className="text-xs text-[#888888] line-clamp-2 leading-relaxed mb-4">{component.description}</p>
               </div>

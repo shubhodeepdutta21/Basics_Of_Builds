@@ -158,15 +158,15 @@ export async function POST(request: Request) {
       }
     `;
 
-        const response = (await client.chat.completions.create({
+        const response = await client.chat.completions.create({
             model: "openai/gpt-oss-120b",
             messages: [{ role: "user", content: prompt }],
             max_completion_tokens: 2048,
             reasoning_effort: "low",
             response_format: { type: "json_object" },
-        } as any)) as any;
+        });
 
-        const content = response.choices?.[0]?.message?.content ?? "";
+        const content = response.choices[0]?.message?.content ?? "";
 
         if (!content.trim()) {
             console.error("AI returned empty content. finish_reason:", response.choices?.[0]?.finish_reason);

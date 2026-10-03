@@ -19,7 +19,7 @@ export type AIProject = {
   description: string;
   difficultyLevel?: string;
   estimatedTime?: string;
-  requirements?: any[];
+  requirements?: unknown[];
   steps?: string[];
 } | null;
 
@@ -42,6 +42,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   // Load inventory & persistent aiProject from local storage on mount
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const savedInventory = localStorage.getItem('bob_inventory') || localStorage.getItem('hackhorizon_inventory');
     if (savedInventory) {
@@ -62,6 +63,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     }
     setHydrated(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Save inventory to local storage on change
   useEffect(() => {

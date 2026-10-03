@@ -23,20 +23,19 @@ const clipList = (v: unknown, maxItems: number, maxChars: number): string[] =>
               .filter(Boolean)
         : [];
 
-// Only "user" and "assistant" roles survive. A forged { role: "system" } entry is dropped,
-// which is what stops a client from overriding your system prompt.
-function sanitizeHistory(raw: unknown): { role: "user" | "assistant"; content: string }[] {
+type ChatMessage = { role: "user" | "assistant"; content: string };
+
+function sanitizeHistory(raw: unknown): ChatMessage[] {
     if (!Array.isArray(raw)) return [];
-    return raw
-        .filter(
-            (m: any) =>
-                m &&
-                (m.role === "user" || m.role === "assistant") &&
-                typeof m.content === "string" &&
-                m.content.trim()
-        )
-        .slice(-MAX_HISTORY_MESSAGES) // keep only the most recent messages
-        .map((m: any) => ({ role: m.role, content: m.content.slice(0, MAX_MESSAGE_CHARS) }));
+     const out: ChatMessage[] = [];
+    for (const m of raw as unknown[]) {
+        if (typeof m !== "object" || m === null) continue;
+        const { role, content } = m as Record<string, unknown>;
+        if ((role === "user" || role === "assistant") && typeof content === "string" && content.trim()) {
+            out.push({ role, content: content.slice(0, MAX_MESSAGE_CHARS) });
+        }
+    }
+    return out.slice(-MAX_HISTORY_MESSAGES);
 }
 
 export async function POST(request: Request) {
@@ -78,12 +77,13 @@ export async function POST(request: Request) {
                   "Follow standard hardware prototyping practices: gather parts, verify pinouts, wire safely, and test code.";
 
         const requirementsText = Array.isArray(body.requirements)
-            ? body.requirements
+            ? (body.requirements as unknown[])
                   .slice(0, 30)
-                  .map((r: any) => {
+                  .map((r) => {
                       if (typeof r === "string") return `- ${clip(r, 100)}`;
-                      const name = clip(r?.name || r?.componentName || r?.componentId, 100) || "Component";
-                      const qty = Number(r?.requiredQuantity || r?.quantity) || 1;
+                      const obj = (r ?? {}) as Record<string, unknown>;
+                      const name = clip(obj.name || obj.componentName || obj.componentId, 100) || "Component";
+                      const qty = Number(obj.requiredQuantity || obj.quantity) || 1;
                       return `- ${name} (Quantity: ${qty})`;
                   })
                   .join("\n")
@@ -115,15 +115,15 @@ If the user asks questions completely unrelated to DIY hardware or this project,
             { role: "user" as const, content: userQuestion },
         ];
 
-        const completion = (await groq.chat.completions.create({
+        const completion = await groq.chat.completions.create({
             model: "openai/gpt-oss-120b",
             messages,
             temperature: 0.3,
             max_completion_tokens: 1500,
             reasoning_effort: "low",
-        } as any)) as any;
+        });
 
-        const reply = completion.choices?.[0]?.message?.content ?? "";
+        const reply = completion.choices[0]?.message?.content ?? "";
         if (!reply.trim()) {
             return NextResponse.json({ error: "AI returned an empty response. Please try again." }, { status: 502 });
         }
