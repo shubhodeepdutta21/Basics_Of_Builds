@@ -74,9 +74,12 @@ export default function Navbar() {
       <div className="flex items-center gap-3">
         {user ? (
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline-block font-mono text-xs text-[#e8c547] bg-[#161616] px-2.5 py-1 rounded border border-[#2a2a2a] truncate max-w-40">
+            <Link
+              href="/account"
+              className="hidden sm:inline-block font-mono text-xs text-[#e8c547] bg-[#161616] px-2.5 py-1 rounded border border-[#2a2a2a] hover:border-[#e8c547] transition-colors truncate max-w-40"
+            >
               {user.email}
-            </span>
+            </Link>
             <button
               onClick={() => {if (window.confirm('Do you want to SignOut?')) handleSignOut();}}
               className="px-3 py-1.5 text-xs font-mono border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 rounded-md transition-colors flex items-center gap-1.5"
