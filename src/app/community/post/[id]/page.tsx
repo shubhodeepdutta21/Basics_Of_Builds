@@ -5,39 +5,51 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useAuthUser } from "@/lib/useAuthUser";
-import { fetchPost, type Post } from "@/lib/posts";
+import { fetchMyPostState, fetchPost, type MyPostState, type Post } from "@/lib/posts";
 import PostCard from "@/app/components/PostCard";
+import CommentsSection from "@/app/components/CommentsSection";
 
-type Result = { for: string; post: Post | null; error: string | null };
+type Result = { key: string; post: Post | null; mine: MyPostState; error: string | null };
+
+const NOTHING_MINE: MyPostState = { liked: new Set(), bookmarked: new Set() };
 
 export default function PostPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuthUser();
+  const { ready, user } = useAuthUser();
+  const userId = user?.id ?? null;
 
   const raw = params.id;
   const id = typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : "";
 
   const [result, setResult] = useState<Result | null>(null);
+  const key = `${id}|${userId ?? "anon"}`;
 
   useEffect(() => {
-    if (!id) return;
+    if (!ready || !id) return;
     let cancelled = false;
-    fetchPost(id)
-      .then((post) => {
-        if (!cancelled) setResult({ for: id, post, error: null });
-      })
-      .catch((err: unknown) => {
+    (async () => {
+      try {
+        const post = await fetchPost(id);
+        const mine = post ? await fetchMyPostState([post.id]) : NOTHING_MINE;
+        if (!cancelled) setResult({ key, post, mine, error: null });
+      } catch (err) {
         if (!cancelled) {
-          setResult({ for: id, post: null, error: err instanceof Error ? err.message : "Couldn't load this post." });
+          setResult({
+            key,
+            post: null,
+            mine: NOTHING_MINE,
+            error: err instanceof Error ? err.message : "Couldn't load this post.",
+          });
         }
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [ready, id, key]);
 
-  const loading = !result || result.for !== id;
+  const loading = !ready || !result || result.key !== key;
 
   return (
     <main className="min-h-[calc(100vh-60px)] bg-[#0d0d0d] text-[#f0ede6] px-4 py-10">
@@ -62,7 +74,18 @@ export default function PostPage() {
         )}
 
         {!loading && result?.post && (
-          <PostCard post={result.post} currentUserId={user?.id ?? null} full onDeleted={() => router.push("/community")} />
+          <>
+            <PostCard
+              key={key}
+              post={result.post}
+              currentUserId={userId}
+              liked={result.mine.liked.has(result.post.id)}
+              bookmarked={result.mine.bookmarked.has(result.post.id)}
+              full
+              onDeleted={() => router.push("/community")}
+            />
+            <CommentsSection postId={result.post.id} currentUserId={userId} />
+          </>
         )}
       </div>
     </main>

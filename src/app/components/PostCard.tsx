@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Share2, Trash2, Wrench } from "lucide-react";
+import { Bookmark, Heart, MessageSquare, Share2, Trash2, Wrench } from "lucide-react";
 import { useCatalog } from "@/lib/CatalogContext";
-import { categoryLabel, deletePost, type Post } from "@/lib/posts";
+import { categoryLabel, deletePost, setPostBookmarked, setPostLiked, type Post } from "@/lib/posts";
 import { timeAgo } from "@/lib/format";
 
 const PREVIEW_CHARS = 280;
@@ -12,11 +12,15 @@ const PREVIEW_CHARS = 280;
 export default function PostCard({
   post,
   currentUserId,
+  liked: initialLiked = false,
+  bookmarked: initialBookmarked = false,
   full = false,
   onDeleted,
 }: {
   post: Post;
   currentUserId: string | null;
+  liked?: boolean;
+  bookmarked?: boolean;
   full?: boolean;
   onDeleted?: (id: string) => void;
 }) {
@@ -24,10 +28,57 @@ export default function PostCard({
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
+  // Local, optimistic copies: the screen updates instantly, the save happens in the background
+  const [liked, setLiked] = useState(initialLiked);
+  const [likeCount, setLikeCount] = useState(post.likeCount);
+  const [bookmarked, setBookmarked] = useState(initialBookmarked);
+  const [busy, setBusy] = useState(false);
+
   const project = post.projectId ? catalog.projects.find((p) => p.id === post.projectId) : undefined;
   const isOwner = currentUserId !== null && currentUserId === post.authorId;
   const truncated = !full && post.body.length > PREVIEW_CHARS;
   const bodyText = truncated ? `${post.body.slice(0, PREVIEW_CHARS).trimEnd()}…` : post.body;
+
+  const needsSignIn = () => {
+    if (currentUserId) return false;
+    setError("Sign in to like and save posts.");
+    return true;
+  };
+
+  const toggleLike = async () => {
+    if (needsSignIn() || busy) return;
+    const next = !liked;
+    setLiked(next);
+    setLikeCount((c) => Math.max(0, c + (next ? 1 : -1)));
+    setBusy(true);
+    setError("");
+    try {
+      await setPostLiked(post.id, next);
+    } catch (err) {
+      // Save failed: put the screen back the way it was
+      setLiked(!next);
+      setLikeCount((c) => Math.max(0, c + (next ? -1 : 1)));
+      setError(err instanceof Error ? err.message : "Couldn't save your like.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleBookmark = async () => {
+    if (needsSignIn() || busy) return;
+    const next = !bookmarked;
+    setBookmarked(next);
+    setBusy(true);
+    setError("");
+    try {
+      await setPostBookmarked(post.id, next);
+    } catch (err) {
+      setBookmarked(!next);
+      setError(err instanceof Error ? err.message : "Couldn't save the bookmark.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const handleShare = async () => {
     try {
@@ -48,6 +99,8 @@ export default function PostCard({
       setError(err instanceof Error ? err.message : "Couldn't delete the post.");
     }
   };
+
+  const action = "flex items-center gap-1.5 text-[#888888] transition-colors";
 
   return (
     <article className="bg-[#161616] border border-[#2a2a2a] rounded-xl p-6">
@@ -92,13 +145,38 @@ export default function PostCard({
         </Link>
       )}
 
-      <div className="flex items-center gap-4 mt-5 pt-4 border-t border-[#2a2a2a] text-xs font-mono">
-        <button onClick={handleShare} className="flex items-center gap-1.5 text-[#888888] hover:text-[#e8c547] transition-colors">
-          <Share2 className="w-3.5 h-3.5" /> {copied ? "Link copied" : "Share"}
+      <div className="flex flex-wrap items-center gap-5 mt-5 pt-4 border-t border-[#2a2a2a] text-xs font-mono">
+        <button
+          onClick={toggleLike}
+          aria-pressed={liked}
+          aria-label={liked ? "Unlike" : "Like"}
+          className={`${action} ${liked ? "text-rose-400" : "hover:text-rose-400"}`}
+        >
+          <Heart className={`w-4 h-4 ${liked ? "fill-rose-400" : ""}`} /> {likeCount}
         </button>
+
+        {!full && (
+          <Link href={`/community/post/${post.id}#comments`} className={`${action} hover:text-[#e8c547]`}>
+            <MessageSquare className="w-4 h-4" /> {post.commentCount}
+          </Link>
+        )}
+
+        <button
+          onClick={toggleBookmark}
+          aria-pressed={bookmarked}
+          aria-label={bookmarked ? "Remove bookmark" : "Save post"}
+          className={`${action} ${bookmarked ? "text-[#e8c547]" : "hover:text-[#e8c547]"}`}
+        >
+          <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-[#e8c547]" : ""}`} /> {bookmarked ? "Saved" : "Save"}
+        </button>
+
+        <button onClick={handleShare} className={`${action} hover:text-[#e8c547]`}>
+          <Share2 className="w-4 h-4" /> {copied ? "Link copied" : "Share"}
+        </button>
+
         {isOwner && (
-          <button onClick={handleDelete} className="flex items-center gap-1.5 text-[#888888] hover:text-rose-400 transition-colors">
-            <Trash2 className="w-3.5 h-3.5" /> Delete
+          <button onClick={handleDelete} className={`${action} hover:text-rose-400 ml-auto`}>
+            <Trash2 className="w-4 h-4" /> Delete
           </button>
         )}
       </div>
